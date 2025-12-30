@@ -1,0 +1,30 @@
+# Source files (we ship bundled dist)
+packages/*/src/
+packages/*/tsconfig.json
+
+# Build configs
+packages/extension/esbuild.config.mjs
+tsconfig.base.json
+
+# Development files
+.git/
+.github/
+node_modules/
+*.tsbuildinfo
+*.map
+
+# Documentation
+DESIGN.md
+*.md
+!README.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log

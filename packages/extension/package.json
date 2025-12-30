@@ -1,0 +1,35 @@
+{
+  "name": "vscdc-extension",
+  "displayName": "VS Code Dungeon Crawler",
+  "description": "A turn-based roguelike dungeon crawler game for VS Code",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscdc.startGame",
+        "title": "Start Game",
+        "category": "Dungeon Crawler"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@vscdc/engine": "*",
+    "@vscdc/game": "*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0"
+  }
+}
