@@ -13,6 +13,30 @@ A turn-based roguelike dungeon crawler game (inspired by NetHack and Rogue) that
 
 ## 2. Architecture
 
+### 2.1 Project Structure — Monorepo with npm Workspaces
+
+The three components live in a single repository as separate npm packages:
+
+```
+/VSCDC2
+├── packages/
+│   ├── engine/           ← @vscdc/engine (Core Game Engine)
+│   ├── game/             ← @vscdc/game (Game Content Module)
+│   └── extension/        ← VS Code Extension
+├── package.json          ← Root workspace configuration
+└── tsconfig.base.json    ← Shared TypeScript config
+```
+
+**Why this structure**:
+- **Enforced boundaries**: Packages can only import declared dependencies—engine literally cannot import from extension
+- **Clean imports**: `import { TurnManager } from '@vscdc/engine'` instead of fragile relative paths
+- **Separate concerns**: Each package has its own tests, types, and build config
+- **Simple tooling**: npm workspaces (built-in, no extra dependencies)
+
+The VS Code extension bundles all packages together at build time for distribution.
+
+### 2.2 Component Diagram
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    VS Code Extension (UI Layer)                 │
