@@ -6,6 +6,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run --config ../../vitest.config.ts --root .",
+    "test:watch": "vitest --config ../../vitest.config.ts --root ."
   }
 }

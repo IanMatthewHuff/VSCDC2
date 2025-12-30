@@ -1,15 +1,14 @@
 import * as esbuild from "esbuild";
 import path from "path";
 import { fileURLToPath } from "url";
+import { glob } from "glob";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isWatch = process.argv.includes("--watch");
 
 /** @type {esbuild.BuildOptions} */
-const buildOptions = {
-  entryPoints: ["src/extension.ts"],
+const sharedOptions = {
   bundle: true,
-  outfile: "dist/extension.js",
   external: ["vscode"],
   format: "cjs",
   platform: "node",
@@ -23,11 +22,33 @@ const buildOptions = {
   },
 };
 
+/** @type {esbuild.BuildOptions} */
+const extensionBuildOptions = {
+  ...sharedOptions,
+  entryPoints: ["src/extension.ts"],
+  outfile: "dist/extension.js",
+};
+
+// Find test files
+const testFiles = await glob("src/test/**/*.test.ts");
+
+/** @type {esbuild.BuildOptions} */
+const testBuildOptions = {
+  ...sharedOptions,
+  entryPoints: testFiles,
+  outdir: "dist/test",
+};
+
 if (isWatch) {
-  const ctx = await esbuild.context(buildOptions);
-  await ctx.watch();
+  const extCtx = await esbuild.context(extensionBuildOptions);
+  const testCtx = await esbuild.context(testBuildOptions);
+  await extCtx.watch();
+  await testCtx.watch();
   console.log("Watching for changes...");
 } else {
-  await esbuild.build(buildOptions);
+  await esbuild.build(extensionBuildOptions);
+  if (testFiles.length > 0) {
+    await esbuild.build(testBuildOptions);
+  }
   console.log("Build complete");
 }

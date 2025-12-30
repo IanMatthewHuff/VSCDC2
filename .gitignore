@@ -10,6 +10,9 @@ dist/
 # VS Code extension package
 *.vsix
 
+# VS Code extension testing
+.vscode-test/
+
 # OS files
 .DS_Store
 Thumbs.db
