@@ -38,3 +38,14 @@ The **VS Code Extension** package is the UI layer that presents the game to play
 - Register commands via `vscode.commands.registerCommand`
 - Use `Disposable` patterns and clean up in `deactivate()`
 - Prefer webview panels over custom editors for the game display
+
+### Documentation
+- **Update `DESIGN.md`** when making design decisions — document UI patterns, VS Code API usage, or rendering approaches
+- For decisions affecting the whole project, also update the root `DESIGN.md`
+
+<instructions>
+<instruction>
+<description>Read this file to understand the VS Code extension's UI architecture, VS Code API usage, and rendering approach when working on extension code.</description>
+<file>DESIGN.md</file>
+</instruction>
+</instructions>

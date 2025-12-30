@@ -32,3 +32,14 @@ The **Core Engine** (`@vscdc/engine`) is a reusable turn-based roguelike engine.
 - UI rendering code
 - VS Code extension APIs
 - Game balance numbers or content data
+
+### Documentation
+- **Update `DESIGN.md`** when making design decisions — document new systems, API changes, or architectural choices
+- For decisions affecting the whole project, also update the root `DESIGN.md`
+
+<instructions>
+<instruction>
+<description>Read this file to understand the engine package's internal architecture, systems, and API design when working on engine code.</description>
+<file>DESIGN.md</file>
+</instruction>
+</instructions>

@@ -43,3 +43,29 @@ This project has three distinct components (see DESIGN.md):
 3. **VS Code Extension** — UI layer only, delegates to engine
 
 Respect these boundaries when adding code.
+
+## Documentation
+
+- **Keep DESIGN.md files current** — When making design decisions during implementation, update the relevant DESIGN.md file(s)
+- Update the root `DESIGN.md` for architectural or cross-cutting decisions
+- Update package-level `DESIGN.md` files for package-specific design choices
+- Document the "why" behind decisions, not just the "what"
+
+<instructions>
+<instruction>
+<description>Read this file to understand the overall project architecture, design decisions, and component boundaries for the VS Code Roguelike project. Load when working on cross-cutting concerns or architectural decisions.</description>
+<file>DESIGN.md</file>
+</instruction>
+<instruction>
+<description>Read when working on the engine package to understand core systems, API design, and engine internals.</description>
+<file>packages/engine/DESIGN.md</file>
+</instruction>
+<instruction>
+<description>Read when working on the game content package to understand entity definitions, content formats, and game rules.</description>
+<file>packages/game/DESIGN.md</file>
+</instruction>
+<instruction>
+<description>Read when working on the VS Code extension to understand UI bindings, VS Code API usage, and rendering approach.</description>
+<file>packages/extension/DESIGN.md</file>
+</instruction>
+</instructions>

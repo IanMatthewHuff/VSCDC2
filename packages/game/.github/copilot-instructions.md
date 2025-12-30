@@ -33,3 +33,14 @@ The **Game Content** package (`@vscdc/game`) contains all game-specific data, en
 - VS Code extension APIs
 - Core engine algorithms (those go in `@vscdc/engine`)
 - Input handling or display logic
+
+### Documentation
+- **Update `DESIGN.md`** when making design decisions — document content formats, new entity types, or rule systems
+- For decisions affecting the whole project, also update the root `DESIGN.md`
+
+<instructions>
+<instruction>
+<description>Read this file to understand the game content package's structure, content formats, and game rules when working on game content.</description>
+<file>DESIGN.md</file>
+</instruction>
+</instructions>
