@@ -5,9 +5,12 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
+    "build": "tsc --build",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "test": "vitest run --config ../../vitest.config.ts --root .",
     "test:watch": "vitest --config ../../vitest.config.ts --root ."
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2"
   }
 }

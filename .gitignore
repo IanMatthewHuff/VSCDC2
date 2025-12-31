@@ -22,3 +22,6 @@ Thumbs.db
 
 # Debug
 *.log
+
+# Manual test files (temporary)
+**/test.ts
