@@ -212,17 +212,49 @@ We're going with a **lightweight, straightforward approach**:
 
 This keeps the codebase readable and debuggable without sacrificing flexibility for a roguelike's needs.
 
-### 5.2 Map Representation
+### 5.2 State Management — DECIDED: Redux Toolkit
+
+We're using **Redux Toolkit** for state management in the engine.
+
+**Why Redux?**
+- **Predictable state updates**: All state changes go through reducers, making the game deterministic
+- **Event-driven architecture**: Middleware enables clean event emission without coupling
+- **Serialization**: Plain JavaScript objects make save/load trivial
+- **Debugging**: Redux DevTools support (in development builds) enables time-travel debugging
+- **Testing**: Pure reducers are easy to test in isolation
+
+**Implementation approach**:
+- **Factory function pattern**: `createGameStore(options)` encapsulates store creation
+- **Production optimization**: DevTools disabled in production via `enableDevTools: false`
+- **Event middleware**: Custom middleware emits game events (e.g., PLAYER_MOVED, TURN_ADVANCED) by comparing state before/after actions
+- **Clean API**: `GameEngine` class wraps Redux, exposing only what the UI needs
+
+**Store structure**:
+```typescript
+{
+  player: { id, position, displayChar, color },
+  game: { turnCount }
+}
+```
+
+**What we're NOT doing**:
+- No complex sagas or async thunks (yet)—the game is turn-based, all actions are synchronous
+- No normalized state (yet)—we'll add it when we have multiple entity types
+- No external state persistence (yet)—Redux state lives in memory until we implement save/load
+
+This gives us a solid foundation for the turn-based roguelike while keeping complexity minimal.
+
+### 5.3 Map Representation
 - 2D array of tiles (simple, fast)
 - Each tile has: terrain type, entity references, item stack
 - Fog of war as separate visibility layer
 
-### 5.3 Save/Load Strategy
+### 5.4 Save/Load Strategy
 - Serialize full game state to JSON
 - Store in VS Code's `globalState` or workspace storage
 - One save slot per workspace? Multiple save slots?
 
-### 5.4 Content Loading
+### 5.5 Content Loading
 - Bundled with extension (simplest)
 - External content packs (future expansion)
 - Consider validation schema for content files
