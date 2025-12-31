@@ -6,20 +6,61 @@
 
 import * as vscode from "vscode";
 import { GAME_VERSION, getEngineVersion } from "@vscdc/game";
+import { GameDocumentProvider } from "./gameDocumentProvider";
+import { GameController } from "./gameController";
+
+let gameController: GameController | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
-  const startGameCommand = vscode.commands.registerCommand(
-    "vscdc.startGame",
-    () => {
-      vscode.window.showInformationMessage(
-        `VS Code Dungeon Crawler - Game v${GAME_VERSION}, Engine v${getEngineVersion()}`
-      );
-    }
+  console.log("VS Code Dungeon Crawler extension activating...");
+
+  // Create the document provider for the game view
+  const documentProvider = new GameDocumentProvider();
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider("roguelike", documentProvider)
   );
 
-  context.subscriptions.push(startGameCommand);
+  // Create the game controller
+  gameController = new GameController(context, documentProvider);
+  context.subscriptions.push(gameController);
+
+  // Register commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.startGame", async () => {
+      await gameController?.startGame();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.moveUp", () => {
+      gameController?.moveUp();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.moveDown", () => {
+      gameController?.moveDown();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.moveLeft", () => {
+      gameController?.moveLeft();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.moveRight", () => {
+      gameController?.moveRight();
+    })
+  );
+
+  console.log(
+    `VS Code Dungeon Crawler activated - Game v${GAME_VERSION}, Engine v${getEngineVersion()}`
+  );
 }
 
 export function deactivate(): void {
-  // Cleanup if needed
+  gameController?.dispose();
+  gameController = undefined;
 }
