@@ -3,8 +3,13 @@ import path from "path";
 
 export default defineConfig({
   test: {
-    include: ["packages/engine/**/*.test.ts", "packages/game/**/*.test.ts"],
-    exclude: ["packages/extension/**"],
+    include: [
+      "packages/engine/**/*.test.ts",
+      "packages/game/**/*.test.ts",
+      "packages/extension/src/__tests__/**/*.test.ts",
+    ],
+    // Exclude VS Code integration tests (those run via @vscode/test-cli)
+    exclude: ["packages/extension/src/test/**"],
     globals: false,
   },
   resolve: {

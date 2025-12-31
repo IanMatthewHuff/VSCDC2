@@ -1,0 +1,14 @@
+{
+  "vitest.exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "packages/extension/src/test/**"
+  ],
+  "vitest.include": [
+    "packages/engine/**/*.test.ts",
+    "packages/game/**/*.test.ts",
+    "packages/extension/src/__tests__/**/*.test.ts"
+  ],
+  "vitest.disableWorkspaceWarning": true,
+  "vitest.maximumConfigs": 1
+}
