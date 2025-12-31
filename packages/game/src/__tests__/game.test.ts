@@ -7,12 +7,22 @@ describe("createGame", () => {
     expect(game.engine).toBeDefined();
     expect(game.level).toBeDefined();
     expect(game.movePlayer).toBeDefined();
+    expect(game.getPlayerStats).toBeDefined();
   });
 
   it("places player at level start position", () => {
     const game = createGame();
     const pos = game.engine.getPlayerPosition();
     expect(pos).toEqual({ x: 3, y: 3 });
+  });
+
+  describe("getPlayerStats", () => {
+    it("returns player name and health", () => {
+      const game = createGame();
+      const stats = game.getPlayerStats();
+      expect(stats.name).toBe("Adventurer");
+      expect(stats.health).toEqual({ current: 10, max: 10 });
+    });
   });
 
   describe("movePlayer", () => {

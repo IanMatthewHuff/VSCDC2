@@ -81,7 +81,25 @@
         "key": "right",
         "when": "vscdc.gameActive && editorTextFocus"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vscdc-game",
+          "title": "Dungeon Crawler",
+          "icon": "$(target)"
+        }
+      ]
+    },
+    "views": {
+      "vscdc-game": [
+        {
+          "id": "vscdc.playerView",
+          "name": "Player",
+          "when": "vscdc.gameActive"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "node esbuild.config.mjs",

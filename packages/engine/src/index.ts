@@ -11,7 +11,7 @@ export const ENGINE_VERSION = "0.0.1";
 export { GameEngine } from "./engine";
 
 // Export types
-export type { GameState, Player, Position } from "./types";
+export type { GameState, Player, Position, Stat } from "./types";
 export type { CreateStoreOptions } from "./store";
 export { GameEventType } from "./events";
 export type {

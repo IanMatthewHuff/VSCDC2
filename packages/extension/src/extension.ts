@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 import { GAME_VERSION, getEngineVersion } from "@vscdc/game";
 import { GameDocumentProvider } from "./gameDocumentProvider";
 import { GameController } from "./gameController";
+import { PlayerTreeProvider } from "./playerTreeProvider";
 
 let gameController: GameController | undefined;
 
@@ -20,8 +21,15 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.registerTextDocumentContentProvider("roguelike", documentProvider)
   );
 
+  // Create the player tree provider
+  const playerTreeProvider = new PlayerTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("vscdc.playerView", playerTreeProvider)
+  );
+  context.subscriptions.push(playerTreeProvider);
+
   // Create the game controller
-  gameController = new GameController(context, documentProvider);
+  gameController = new GameController(context, documentProvider, playerTreeProvider);
   context.subscriptions.push(gameController);
 
   // Register commands

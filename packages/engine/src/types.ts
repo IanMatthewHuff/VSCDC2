@@ -11,13 +11,23 @@ export interface Position {
 }
 
 /**
+ * Represents a stat with current and maximum values
+ */
+export interface Stat {
+  current: number;
+  max: number;
+}
+
+/**
  * Represents the player character
  */
 export interface Player {
   id: string;
+  name: string;
   position: Position;
   displayChar: string;
   color: string;
+  health: Stat;
 }
 
 /**

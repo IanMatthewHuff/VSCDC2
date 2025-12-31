@@ -26,6 +26,14 @@ export function getEngineVersion(): string {
 }
 
 /**
+ * Player stats exposed by the game session
+ */
+export interface PlayerStats {
+  name: string;
+  health: { current: number; max: number };
+}
+
+/**
  * Game session that combines the engine with a level
  */
 export interface GameSession {
@@ -33,6 +41,8 @@ export interface GameSession {
   level: Level;
   /** Move player in a direction, respects wall collision */
   movePlayer: (dx: number, dy: number) => boolean;
+  /** Get current player stats */
+  getPlayerStats: () => PlayerStats;
 }
 
 /**
@@ -62,9 +72,20 @@ export function createGame(): GameSession {
     return false;
   }
 
+  /**
+   * Gets the current player stats
+   */
+  function getPlayerStats(): PlayerStats {
+    return {
+      name: engine.getPlayerName(),
+      health: engine.getPlayerHealth(),
+    };
+  }
+
   return {
     engine,
     level,
     movePlayer,
+    getPlayerStats,
   };
 }

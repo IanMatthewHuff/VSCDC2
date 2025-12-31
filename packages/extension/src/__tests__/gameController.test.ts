@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameController, GAME_ACTIVE_CONTEXT } from "../gameController";
 import { GameDocumentProvider } from "../gameDocumentProvider";
+import { PlayerTreeProvider } from "../playerTreeProvider";
 
 // Mock vscode module - factory must not reference external variables
 vi.mock("vscode", () => {
@@ -21,6 +22,20 @@ vi.mock("vscode", () => {
       parse: (str: string) => ({ toString: () => str, scheme: "roguelike" }),
     },
     EventEmitter: MockEventEmitter,
+    TreeItem: class {
+      label: string;
+      description?: string;
+      collapsibleState?: number;
+      constructor(label: string, collapsibleState?: number) {
+        this.label = label;
+        this.collapsibleState = collapsibleState;
+      }
+    },
+    TreeItemCollapsibleState: {
+      None: 0,
+      Collapsed: 1,
+      Expanded: 2,
+    },
     workspace: {
       openTextDocument: vi.fn().mockResolvedValue({}),
     },
@@ -41,6 +56,7 @@ describe("GameController", () => {
   let controller: GameController;
   let mockContext: vscode.ExtensionContext;
   let documentProvider: GameDocumentProvider;
+  let playerTreeProvider: PlayerTreeProvider;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,7 +67,8 @@ describe("GameController", () => {
     } as unknown as vscode.ExtensionContext;
 
     documentProvider = new GameDocumentProvider();
-    controller = new GameController(mockContext, documentProvider);
+    playerTreeProvider = new PlayerTreeProvider();
+    controller = new GameController(mockContext, documentProvider, playerTreeProvider);
   });
 
   describe("hasActiveGame", () => {

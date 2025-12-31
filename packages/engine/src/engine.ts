@@ -88,4 +88,19 @@ export class GameEngine {
   public getTurnCount(): number {
     return this.store.getState().game.turnCount;
   }
+
+  /**
+   * Get the player's name
+   */
+  public getPlayerName(): string {
+    return this.store.getState().player.name;
+  }
+
+  /**
+   * Get the player's health stats
+   */
+  public getPlayerHealth(): { current: number; max: number } {
+    const health = this.store.getState().player.health;
+    return { current: health.current, max: health.max };
+  }
 }

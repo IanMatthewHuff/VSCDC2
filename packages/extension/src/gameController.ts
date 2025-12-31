@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { GameSession, createGame } from "@vscdc/game";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
+import { PlayerTreeProvider } from "./playerTreeProvider";
 
 /**
  * Context key that indicates when the game is active
@@ -18,13 +19,16 @@ export const GAME_ACTIVE_CONTEXT = "vscdc.gameActive";
 export class GameController {
   private gameSession: GameSession | null = null;
   private documentProvider: GameDocumentProvider;
+  private playerTreeProvider: PlayerTreeProvider;
   private gameEditor: vscode.TextEditor | null = null;
 
   constructor(
     private context: vscode.ExtensionContext,
-    documentProvider: GameDocumentProvider
+    documentProvider: GameDocumentProvider,
+    playerTreeProvider: PlayerTreeProvider
   ) {
     this.documentProvider = documentProvider;
+    this.playerTreeProvider = playerTreeProvider;
   }
 
   /**
@@ -34,6 +38,7 @@ export class GameController {
     // Create a new game session
     this.gameSession = createGame();
     this.documentProvider.setGameSession(this.gameSession);
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
 
     // Open the game document
     const doc = await vscode.workspace.openTextDocument(GAME_DOCUMENT_URI);
@@ -54,6 +59,7 @@ export class GameController {
   stopGame(): void {
     this.gameSession = null;
     this.gameEditor = null;
+    this.playerTreeProvider.setPlayerStats(null);
     vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, false);
   }
 

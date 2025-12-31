@@ -7,9 +7,11 @@ import { Player, Position } from "./types";
 
 const initialPlayerState: Player = {
   id: "player",
+  name: "Adventurer",
   position: { x: 5, y: 5 },
   displayChar: "@",
   color: "white",
+  health: { current: 10, max: 10 },
 };
 
 /**
