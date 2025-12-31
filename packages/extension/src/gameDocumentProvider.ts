@@ -12,6 +12,7 @@ import { GameSession } from "@vscdc/game";
 export class GameDocumentProvider implements vscode.TextDocumentContentProvider {
   private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
   private gameSession: GameSession | null = null;
+  private stateChangeUnsubscribe?: () => void;
 
   readonly onDidChange = this._onDidChange.event;
 
@@ -19,9 +20,14 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
    * Set the game session to render
    */
   setGameSession(session: GameSession): void {
+    // Clean up previous subscription if any
+    if (this.stateChangeUnsubscribe) {
+      this.stateChangeUnsubscribe();
+    }
+
     this.gameSession = session;
     // Subscribe to state changes to trigger document updates
-    session.engine.onStateChanged(() => {
+    this.stateChangeUnsubscribe = session.engine.onStateChanged(() => {
       this.refresh();
     });
   }
@@ -82,6 +88,10 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
   }
 
   dispose(): void {
+    if (this.stateChangeUnsubscribe) {
+      this.stateChangeUnsubscribe();
+      this.stateChangeUnsubscribe = undefined;
+    }
     this._onDidChange.dispose();
   }
 }
