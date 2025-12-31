@@ -18,6 +18,68 @@
         "command": "vscdc.startGame",
         "title": "Start Game",
         "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.moveUp",
+        "title": "Move Up",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.moveDown",
+        "title": "Move Down",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.moveLeft",
+        "title": "Move Left",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.moveRight",
+        "title": "Move Right",
+        "category": "Dungeon Crawler"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscdc.moveUp",
+        "key": "w",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveUp",
+        "key": "up",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveDown",
+        "key": "s",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveDown",
+        "key": "down",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveLeft",
+        "key": "a",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveLeft",
+        "key": "left",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveRight",
+        "key": "d",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.moveRight",
+        "key": "right",
+        "when": "vscdc.gameActive && editorTextFocus"
       }
     ]
   },
