@@ -12,10 +12,14 @@ export class PlayerStatItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly value: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
+    icon?: vscode.ThemeIcon
   ) {
     super(label, collapsibleState);
     this.description = value;
+    if (icon) {
+      this.iconPath = icon;
+    }
   }
 }
 
@@ -50,10 +54,17 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
     if (!element) {
       // Root level: show name and health
       return Promise.resolve([
-        new PlayerStatItem("Name", this.playerStats.name),
         new PlayerStatItem(
-          "$(heart) Health",
-          `${this.playerStats.health.current}/${this.playerStats.health.max}`
+          "Name",
+          this.playerStats.name,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("account")
+        ),
+        new PlayerStatItem(
+          "Health",
+          `${this.playerStats.health.current}/${this.playerStats.health.max}`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("heart", new vscode.ThemeColor("charts.red"))
         ),
       ]);
     }

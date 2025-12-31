@@ -12,12 +12,24 @@ vi.mock("vscode", () => {
     dispose = vi.fn();
   }
 
+  class MockThemeIcon {
+    constructor(
+      public readonly id: string,
+      public readonly color?: MockThemeColor
+    ) {}
+  }
+
+  class MockThemeColor {
+    constructor(public readonly id: string) {}
+  }
+
   return {
     EventEmitter: MockEventEmitter,
     TreeItem: class {
       label: string;
       description?: string;
       collapsibleState?: number;
+      iconPath?: MockThemeIcon;
       constructor(label: string, collapsibleState?: number) {
         this.label = label;
         this.collapsibleState = collapsibleState;
@@ -28,6 +40,8 @@ vi.mock("vscode", () => {
       Collapsed: 1,
       Expanded: 2,
     },
+    ThemeIcon: MockThemeIcon,
+    ThemeColor: MockThemeColor,
   };
 });
 
@@ -54,10 +68,19 @@ describe("PlayerTreeProvider", () => {
 
       const children = await provider.getChildren();
       expect(children).toHaveLength(2);
+
+      // Name stat
       expect(children[0].label).toBe("Name");
       expect(children[0].description).toBe("Test Hero");
-      expect(children[1].label).toBe("$(heart) Health");
+      expect(children[0].iconPath).toBeDefined();
+      expect((children[0].iconPath as any).id).toBe("account");
+
+      // Health stat with colored icon
+      expect(children[1].label).toBe("Health");
       expect(children[1].description).toBe("8/10");
+      expect(children[1].iconPath).toBeDefined();
+      expect((children[1].iconPath as any).id).toBe("heart");
+      expect((children[1].iconPath as any).color?.id).toBe("charts.red");
     });
 
     it("returns empty array after clearing player stats", async () => {
