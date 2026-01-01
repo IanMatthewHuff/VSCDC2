@@ -5,6 +5,12 @@
 
 import * as vscode from "vscode";
 import { GameSession, createGame } from "@vscdc/game";
+import {
+  GameEventType,
+  AttackEvent,
+  EntityDestroyedEvent,
+  AnyGameEvent,
+} from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 
@@ -20,15 +26,19 @@ export class GameController {
   private gameSession: GameSession | null = null;
   private documentProvider: GameDocumentProvider;
   private playerTreeProvider: PlayerTreeProvider;
+  private combatOutputChannel: vscode.OutputChannel;
   private gameEditor: vscode.TextEditor | null = null;
+  private eventUnsubscribers: Array<() => void> = [];
 
   constructor(
     private context: vscode.ExtensionContext,
     documentProvider: GameDocumentProvider,
-    playerTreeProvider: PlayerTreeProvider
+    playerTreeProvider: PlayerTreeProvider,
+    combatOutputChannel: vscode.OutputChannel
   ) {
     this.documentProvider = documentProvider;
     this.playerTreeProvider = playerTreeProvider;
+    this.combatOutputChannel = combatOutputChannel;
   }
 
   /**
@@ -39,6 +49,14 @@ export class GameController {
     this.gameSession = createGame();
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
+    // Subscribe to combat events
+    this.subscribeToEvents();
+
+    // Show and clear the combat output channel
+    this.combatOutputChannel.clear();
+    this.combatOutputChannel.appendLine("=== Combat Log ===");
+    this.combatOutputChannel.appendLine("");
 
     // Open the game document
     const doc = await vscode.workspace.openTextDocument(GAME_DOCUMENT_URI);
@@ -54,9 +72,48 @@ export class GameController {
   }
 
   /**
+   * Subscribe to game events for combat logging
+   */
+  private subscribeToEvents(): void {
+    if (!this.gameSession) return;
+
+    const engine = this.gameSession.engine;
+
+    // Subscribe to attack events
+    const unsubAttack = engine.onEvent(GameEventType.ATTACK, (event: AnyGameEvent) => {
+      const attackEvent = event as AttackEvent;
+      const message = `${attackEvent.attackerName} attacked ${attackEvent.targetName} for ${attackEvent.damage} damage. HP: ${attackEvent.targetRemainingHp}/${attackEvent.targetMaxHp}`;
+      this.combatOutputChannel.appendLine(message);
+    });
+    this.eventUnsubscribers.push(unsubAttack);
+
+    // Subscribe to entity destroyed events
+    const unsubDestroyed = engine.onEvent(
+      GameEventType.ENTITY_DESTROYED,
+      (event: AnyGameEvent) => {
+        const destroyedEvent = event as EntityDestroyedEvent;
+        const message = `${destroyedEvent.entityName} was destroyed by ${destroyedEvent.destroyedByName}!`;
+        this.combatOutputChannel.appendLine(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubDestroyed);
+  }
+
+  /**
+   * Unsubscribe from all game events
+   */
+  private unsubscribeFromEvents(): void {
+    for (const unsub of this.eventUnsubscribers) {
+      unsub();
+    }
+    this.eventUnsubscribers = [];
+  }
+
+  /**
    * Stop the current game session
    */
   stopGame(): void {
+    this.unsubscribeFromEvents();
     this.gameSession = null;
     this.gameEditor = null;
     this.playerTreeProvider.setPlayerStats(null);
@@ -67,47 +124,43 @@ export class GameController {
    * Move the player up
    */
   moveUp(): void {
-    if (this.gameSession) {
-      const moved = this.gameSession.movePlayer(0, -1);
-      if (!moved) {
-        this.showBlockedMessage();
-      }
-    }
+    this.handleMove(0, -1);
   }
 
   /**
    * Move the player down
    */
   moveDown(): void {
-    if (this.gameSession) {
-      const moved = this.gameSession.movePlayer(0, 1);
-      if (!moved) {
-        this.showBlockedMessage();
-      }
-    }
+    this.handleMove(0, 1);
   }
 
   /**
    * Move the player left
    */
   moveLeft(): void {
-    if (this.gameSession) {
-      const moved = this.gameSession.movePlayer(-1, 0);
-      if (!moved) {
-        this.showBlockedMessage();
-      }
-    }
+    this.handleMove(-1, 0);
   }
 
   /**
    * Move the player right
    */
   moveRight(): void {
-    if (this.gameSession) {
-      const moved = this.gameSession.movePlayer(1, 0);
-      if (!moved) {
-        this.showBlockedMessage();
-      }
+    this.handleMove(1, 0);
+  }
+
+  /**
+   * Handle a movement command
+   */
+  private handleMove(dx: number, dy: number): void {
+    if (!this.gameSession) return;
+
+    const result = this.gameSession.movePlayer(dx, dy);
+
+    // Update player stats after any action
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
+    if (!result.success && result.actionType === "blocked") {
+      this.showBlockedMessage();
     }
   }
 

@@ -58,6 +58,14 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     const playerPos = engine.getPlayerPosition();
     const turnCount = engine.getTurnCount();
     const playerState = engine.getState().player;
+    const entities = session.getEntities();
+
+    // Create a map of positions to entities for quick lookup
+    const entityPositions = new Map<string, { displayChar: string }>();
+    for (const entity of entities) {
+      const key = `${entity.position.x},${entity.position.y}`;
+      entityPositions.set(key, entity);
+    }
 
     const lines: string[] = [];
 
@@ -66,16 +74,22 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     lines.push(`Turn: ${turnCount}`);
     lines.push("");
 
-    // Render the level grid with player
+    // Render the level grid with player and entities
     for (let y = 0; y < level.height; y++) {
       let row = "";
       for (let x = 0; x < level.width; x++) {
-        // Show player if at this position
+        // Show player if at this position (player renders on top)
         if (x === playerPos.x && y === playerPos.y) {
           row += playerState.displayChar;
         } else {
-          // Show the tile
-          row += level.tiles[y][x].displayChar;
+          // Check for entity at this position
+          const entity = entityPositions.get(`${x},${y}`);
+          if (entity) {
+            row += entity.displayChar;
+          } else {
+            // Show the tile
+            row += level.tiles[y][x].displayChar;
+          }
         }
       }
       lines.push(row);

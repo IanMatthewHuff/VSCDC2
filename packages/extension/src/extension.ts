@@ -11,9 +11,14 @@ import { GameController } from "./gameController";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 
 let gameController: GameController | undefined;
+let combatOutputChannel: vscode.OutputChannel | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log("VS Code Dungeon Crawler extension activating...");
+
+  // Create the combat output channel for logging attacks
+  combatOutputChannel = vscode.window.createOutputChannel("Dungeon Crawler - Combat");
+  context.subscriptions.push(combatOutputChannel);
 
   // Create the document provider for the game view
   const documentProvider = new GameDocumentProvider();
@@ -29,7 +34,12 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(playerTreeProvider);
 
   // Create the game controller
-  gameController = new GameController(context, documentProvider, playerTreeProvider);
+  gameController = new GameController(
+    context,
+    documentProvider,
+    playerTreeProvider,
+    combatOutputChannel
+  );
   context.subscriptions.push(gameController);
 
   // Register commands
@@ -71,4 +81,6 @@ export function activate(context: vscode.ExtensionContext): void {
 export function deactivate(): void {
   gameController?.dispose();
   gameController = undefined;
+  combatOutputChannel?.dispose();
+  combatOutputChannel = undefined;
 }

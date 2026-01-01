@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createGame } from "../index";
+import { createGame, createTargetDummy } from "../index";
 
 describe("createGame", () => {
   it("creates a game session with engine and level", () => {
@@ -8,12 +8,23 @@ describe("createGame", () => {
     expect(game.level).toBeDefined();
     expect(game.movePlayer).toBeDefined();
     expect(game.getPlayerStats).toBeDefined();
+    expect(game.getEntities).toBeDefined();
+    expect(game.getEntityAt).toBeDefined();
   });
 
   it("places player at level start position", () => {
     const game = createGame();
     const pos = game.engine.getPlayerPosition();
     expect(pos).toEqual({ x: 3, y: 3 });
+  });
+
+  it("creates a target dummy in the level", () => {
+    const game = createGame();
+    const entities = game.getEntities();
+    expect(entities).toHaveLength(1);
+    expect(entities[0].name).toBe("Target Dummy");
+    expect(entities[0].type).toBe("target_dummy");
+    expect(entities[0].position).toEqual({ x: 2, y: 2 });
   });
 
   describe("getPlayerStats", () => {
@@ -25,13 +36,38 @@ describe("createGame", () => {
     });
   });
 
+  describe("getEntities", () => {
+    it("returns all entities in the game", () => {
+      const game = createGame();
+      const entities = game.getEntities();
+      expect(entities).toHaveLength(1);
+      expect(entities[0].name).toBe("Target Dummy");
+    });
+  });
+
+  describe("getEntityAt", () => {
+    it("returns entity at the specified position", () => {
+      const game = createGame();
+      const entity = game.getEntityAt({ x: 2, y: 2 });
+      expect(entity).toBeDefined();
+      expect(entity?.name).toBe("Target Dummy");
+    });
+
+    it("returns undefined when no entity at position", () => {
+      const game = createGame();
+      const entity = game.getEntityAt({ x: 4, y: 4 });
+      expect(entity).toBeUndefined();
+    });
+  });
+
   describe("movePlayer", () => {
     it("allows movement to floor tiles", () => {
       const game = createGame();
-      // Move left (from 3,3 to 2,3)
-      const result = game.movePlayer(-1, 0);
-      expect(result).toBe(true);
-      expect(game.engine.getPlayerPosition()).toEqual({ x: 2, y: 3 });
+      // Move right (from 3,3 to 4,3 - away from the target dummy)
+      const result = game.movePlayer(1, 0);
+      expect(result.success).toBe(true);
+      expect(result.actionType).toBe("move");
+      expect(game.engine.getPlayerPosition()).toEqual({ x: 4, y: 3 });
     });
 
     it("blocks movement into walls", () => {
@@ -40,24 +76,25 @@ describe("createGame", () => {
       game.movePlayer(-2, -2);
       // Try to move into wall
       const result = game.movePlayer(-1, 0);
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
+      expect(result.actionType).toBe("blocked");
       // Position should be unchanged
       expect(game.engine.getPlayerPosition()).toEqual({ x: 1, y: 1 });
     });
 
     it("supports all four directions", () => {
       const game = createGame();
-      // Start at 3,3
-      expect(game.movePlayer(0, -1)).toBe(true); // up to 3,2
-      expect(game.engine.getPlayerPosition()).toEqual({ x: 3, y: 2 });
-
-      expect(game.movePlayer(1, 0)).toBe(true); // right to 4,2
-      expect(game.engine.getPlayerPosition()).toEqual({ x: 4, y: 2 });
-
-      expect(game.movePlayer(0, 1)).toBe(true); // down to 4,3
+      // Start at 3,3, move right first to avoid target dummy
+      expect(game.movePlayer(1, 0).actionType).toBe("move"); // right to 4,3
       expect(game.engine.getPlayerPosition()).toEqual({ x: 4, y: 3 });
 
-      expect(game.movePlayer(-1, 0)).toBe(true); // left to 3,3
+      expect(game.movePlayer(0, -1).actionType).toBe("move"); // up to 4,2
+      expect(game.engine.getPlayerPosition()).toEqual({ x: 4, y: 2 });
+
+      expect(game.movePlayer(0, 1).actionType).toBe("move"); // down to 4,3
+      expect(game.engine.getPlayerPosition()).toEqual({ x: 4, y: 3 });
+
+      expect(game.movePlayer(-1, 0).actionType).toBe("move"); // left to 3,3
       expect(game.engine.getPlayerPosition()).toEqual({ x: 3, y: 3 });
     });
 
@@ -65,13 +102,109 @@ describe("createGame", () => {
       const game = createGame();
       // Move to top-left corner (1,1)
       game.movePlayer(-2, -2);
-      expect(game.movePlayer(-1, 0)).toBe(false); // left wall
-      expect(game.movePlayer(0, -1)).toBe(false); // top wall
+      expect(game.movePlayer(-1, 0).actionType).toBe("blocked"); // left wall
+      expect(game.movePlayer(0, -1).actionType).toBe("blocked"); // top wall
 
       // Move to bottom-right corner (4,4)
       game.movePlayer(3, 3);
-      expect(game.movePlayer(1, 0)).toBe(false); // right wall
-      expect(game.movePlayer(0, 1)).toBe(false); // bottom wall
+      expect(game.movePlayer(1, 0).actionType).toBe("blocked"); // right wall
+      expect(game.movePlayer(0, 1).actionType).toBe("blocked"); // bottom wall
     });
+  });
+
+  describe("bump-to-attack", () => {
+    it("attacks enemy when moving onto its tile", () => {
+      const game = createGame();
+      // Player starts at (3,3), target dummy is at (2,2)
+      // Move diagonally to (2,3) first, then up to attack
+      game.movePlayer(-1, 0); // Move to 2,3
+
+      // Now move up into the target dummy at (2,2)
+      const result = game.movePlayer(0, -1);
+
+      expect(result.success).toBe(true);
+      expect(result.actionType).toBe("attack");
+      expect(result.attackTarget).toBeDefined();
+      expect(result.attackTarget?.name).toBe("Target Dummy");
+    });
+
+    it("does not move player when attacking", () => {
+      const game = createGame();
+      // Move to position adjacent to target dummy
+      game.movePlayer(-1, 0); // Move to 2,3
+      const posBeforeAttack = game.engine.getPlayerPosition();
+
+      // Attack the target dummy
+      game.movePlayer(0, -1);
+
+      // Player should still be at (2,3)
+      expect(game.engine.getPlayerPosition()).toEqual(posBeforeAttack);
+    });
+
+    it("deals damage to enemy when attacking", () => {
+      const game = createGame();
+      game.movePlayer(-1, 0); // Move to 2,3
+
+      // Get target dummy HP before attack
+      const dummyBefore = game.getEntityAt({ x: 2, y: 2 });
+      const hpBefore = dummyBefore?.health.current ?? 0;
+
+      // Attack
+      game.movePlayer(0, -1);
+
+      // Check HP decreased
+      const dummyAfter = game.getEntityAt({ x: 2, y: 2 });
+      expect(dummyAfter?.health.current).toBe(hpBefore - 1);
+    });
+
+    it("destroys enemy after enough attacks", () => {
+      const game = createGame();
+      game.movePlayer(-1, 0); // Move to 2,3
+
+      // Target dummy has 3 HP, attack 3 times
+      game.movePlayer(0, -1); // Attack 1
+      game.movePlayer(0, -1); // Attack 2
+      const result = game.movePlayer(0, -1); // Attack 3
+
+      expect(result.targetDestroyed).toBe(true);
+      expect(game.getEntityAt({ x: 2, y: 2 })).toBeUndefined();
+      expect(game.getEntities()).toHaveLength(0);
+    });
+
+    it("can move onto tile after enemy is destroyed", () => {
+      const game = createGame();
+      game.movePlayer(-1, 0); // Move to 2,3
+
+      // Destroy the target dummy
+      game.movePlayer(0, -1); // Attack 1
+      game.movePlayer(0, -1); // Attack 2
+      game.movePlayer(0, -1); // Attack 3 - destroyed
+
+      // Now we can move onto that tile
+      const result = game.movePlayer(0, -1);
+      expect(result.actionType).toBe("move");
+      expect(game.engine.getPlayerPosition()).toEqual({ x: 2, y: 2 });
+    });
+  });
+});
+
+describe("createTargetDummy", () => {
+  it("creates a target dummy with correct properties", () => {
+    const dummy = createTargetDummy({ x: 5, y: 5 });
+
+    expect(dummy.name).toBe("Target Dummy");
+    expect(dummy.type).toBe("target_dummy");
+    expect(dummy.displayChar).toBe("D");
+    expect(dummy.color).toBe("brown");
+    expect(dummy.health).toEqual({ current: 3, max: 3 });
+    expect(dummy.position).toEqual({ x: 5, y: 5 });
+  });
+
+  it("creates unique IDs for each dummy", () => {
+    // Note: IDs are reset when createGame() is called
+    const dummy1 = createTargetDummy({ x: 1, y: 1 });
+    const dummy2 = createTargetDummy({ x: 2, y: 2 });
+
+    expect(dummy1.id).not.toBe(dummy2.id);
   });
 });

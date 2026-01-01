@@ -52,11 +52,28 @@ vi.mock("vscode", () => {
 // Import vscode after mocking
 import * as vscode from "vscode";
 
+/**
+ * Creates a mock OutputChannel for testing
+ */
+function createMockOutputChannel(): vscode.OutputChannel {
+  return {
+    name: "Test Output",
+    append: vi.fn(),
+    appendLine: vi.fn(),
+    clear: vi.fn(),
+    show: vi.fn(),
+    hide: vi.fn(),
+    dispose: vi.fn(),
+    replace: vi.fn(),
+  };
+}
+
 describe("GameController", () => {
   let controller: GameController;
   let mockContext: vscode.ExtensionContext;
   let documentProvider: GameDocumentProvider;
   let playerTreeProvider: PlayerTreeProvider;
+  let mockOutputChannel: vscode.OutputChannel;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -68,7 +85,13 @@ describe("GameController", () => {
 
     documentProvider = new GameDocumentProvider();
     playerTreeProvider = new PlayerTreeProvider();
-    controller = new GameController(mockContext, documentProvider, playerTreeProvider);
+    mockOutputChannel = createMockOutputChannel();
+    controller = new GameController(
+      mockContext,
+      documentProvider,
+      playerTreeProvider,
+      mockOutputChannel
+    );
   });
 
   describe("hasActiveGame", () => {
@@ -112,6 +135,13 @@ describe("GameController", () => {
       expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
         "Game started! Use WASD or arrow keys to move."
       );
+    });
+
+    it("should clear and initialize the combat output channel", async () => {
+      await controller.startGame();
+
+      expect(mockOutputChannel.clear).toHaveBeenCalled();
+      expect(mockOutputChannel.appendLine).toHaveBeenCalledWith("=== Combat Log ===");
     });
   });
 

@@ -9,9 +9,19 @@ export const ENGINE_VERSION = "0.0.1";
 
 // Export main engine class
 export { GameEngine } from "./engine";
+export type { AttackResult } from "./engine";
 
 // Export types
-export type { GameState, Player, Position, Stat } from "./types";
+export type {
+  GameState,
+  Player,
+  Position,
+  Stat,
+  Entity,
+  CombatEntity,
+  Enemy,
+  EntityState,
+} from "./types";
 export type { CreateStoreOptions } from "./store";
 export { GameEventType } from "./events";
 export type {
@@ -19,9 +29,12 @@ export type {
   PlayerMovedEvent,
   TurnAdvancedEvent,
   StateChangedEvent,
+  AttackEvent,
+  EntityDestroyedEvent,
   AnyGameEvent,
 } from "./events";
 
 // Export action creators for advanced usage
 export { movePlayer, movePlayerBy } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
+export { addEntity, damageEntity, removeEntity, clearEntities } from "./entitySlice";

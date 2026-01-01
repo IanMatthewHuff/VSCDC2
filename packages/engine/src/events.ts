@@ -6,6 +6,8 @@ export enum GameEventType {
   PLAYER_MOVED = "player_moved",
   TURN_ADVANCED = "turn_advanced",
   STATE_CHANGED = "state_changed",
+  ATTACK = "attack",
+  ENTITY_DESTROYED = "entity_destroyed",
 }
 
 /**
@@ -41,6 +43,36 @@ export interface StateChangedEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when an attack occurs
+ */
+export interface AttackEvent extends GameEvent {
+  type: GameEventType.ATTACK;
+  attackerId: string;
+  attackerName: string;
+  targetId: string;
+  targetName: string;
+  damage: number;
+  targetRemainingHp: number;
+  targetMaxHp: number;
+}
+
+/**
+ * Event emitted when an entity is destroyed
+ */
+export interface EntityDestroyedEvent extends GameEvent {
+  type: GameEventType.ENTITY_DESTROYED;
+  entityId: string;
+  entityName: string;
+  destroyedById: string;
+  destroyedByName: string;
+}
+
+/**
  * Union type of all possible game events
  */
-export type AnyGameEvent = PlayerMovedEvent | TurnAdvancedEvent | StateChangedEvent;
+export type AnyGameEvent =
+  | PlayerMovedEvent
+  | TurnAdvancedEvent
+  | StateChangedEvent
+  | AttackEvent
+  | EntityDestroyedEvent;

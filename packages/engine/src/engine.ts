@@ -4,11 +4,33 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState } from "./types";
+import { GameState, Enemy, Position } from "./types";
 import { movePlayer, movePlayerBy } from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
+import {
+  addEntity,
+  damageEntity,
+  removeEntity,
+  selectEntityAt,
+  selectAllEntities,
+  selectEntityById,
+} from "./entitySlice";
 import { GameEventType, AnyGameEvent } from "./events";
-import { EventHandler } from "./eventMiddleware";
+import { EventHandler, queueAttackEvent } from "./eventMiddleware";
+
+/**
+ * Result of an attack action
+ */
+export interface AttackResult {
+  /** Whether the attack was successful */
+  hit: boolean;
+  /** Amount of damage dealt */
+  damage: number;
+  /** Whether the target was destroyed */
+  targetDestroyed: boolean;
+  /** The target that was attacked */
+  target: Enemy | undefined;
+}
 
 /**
  * Main game engine class
@@ -102,5 +124,100 @@ export class GameEngine {
   public getPlayerHealth(): { current: number; max: number } {
     const health = this.store.getState().player.health;
     return { current: health.current, max: health.max };
+  }
+
+  // ============================================
+  // Entity Management
+  // ============================================
+
+  /**
+   * Add an enemy entity to the game
+   */
+  public addEntity(entity: Enemy): void {
+    this.store.dispatch(addEntity({ entity }));
+  }
+
+  /**
+   * Get all entities in the game
+   */
+  public getEntities(): Enemy[] {
+    return selectAllEntities(this.store.getState().entities);
+  }
+
+  /**
+   * Get an entity at a specific position
+   */
+  public getEntityAt(position: Position): Enemy | undefined {
+    return selectEntityAt(this.store.getState().entities, position);
+  }
+
+  /**
+   * Get an entity by its ID
+   */
+  public getEntityById(id: string): Enemy | undefined {
+    return selectEntityById(this.store.getState().entities, id);
+  }
+
+  /**
+   * Remove an entity from the game
+   */
+  public removeEntity(id: string): void {
+    this.store.dispatch(removeEntity({ id }));
+  }
+
+  // ============================================
+  // Combat
+  // ============================================
+
+  /**
+   * Attack an entity by ID
+   * @param targetId The ID of the entity to attack
+   * @param damage The amount of damage to deal (default: 1)
+   * @returns Result of the attack
+   */
+  public attack(targetId: string, damage: number = 1): AttackResult {
+    const target = this.getEntityById(targetId);
+
+    if (!target) {
+      return {
+        hit: false,
+        damage: 0,
+        targetDestroyed: false,
+        target: undefined,
+      };
+    }
+
+    const player = this.store.getState().player;
+
+    // Queue the attack event before dispatching
+    queueAttackEvent({
+      attackerId: player.id,
+      attackerName: player.name,
+      targetId: target.id,
+      targetName: target.name,
+      damage: damage,
+    });
+
+    // Deal damage
+    this.store.dispatch(damageEntity({ id: targetId, amount: damage }));
+
+    // Check if target was destroyed
+    const updatedTarget = this.getEntityById(targetId);
+    const targetDestroyed = updatedTarget !== undefined && updatedTarget.health.current <= 0;
+
+    // Remove destroyed entities
+    if (targetDestroyed) {
+      this.store.dispatch(removeEntity({ id: targetId }));
+    }
+
+    // Advance turn
+    this.store.dispatch(incrementTurn());
+
+    return {
+      hit: true,
+      damage,
+      targetDestroyed,
+      target: updatedTarget,
+    };
   }
 }
