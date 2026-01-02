@@ -8,6 +8,7 @@ export enum GameEventType {
   STATE_CHANGED = "state_changed",
   ATTACK = "attack",
   ENTITY_DESTROYED = "entity_destroyed",
+  NPC_INTERACTION = "npc_interaction",
 }
 
 /**
@@ -68,6 +69,17 @@ export interface EntityDestroyedEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when the player interacts with an NPC
+ */
+export interface NPCInteractionEvent extends GameEvent {
+  type: GameEventType.NPC_INTERACTION;
+  playerId: string;
+  playerName: string;
+  npcId: string;
+  npcName: string;
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -75,4 +87,5 @@ export type AnyGameEvent =
   | TurnAdvancedEvent
   | StateChangedEvent
   | AttackEvent
-  | EntityDestroyedEvent;
+  | EntityDestroyedEvent
+  | NPCInteractionEvent;

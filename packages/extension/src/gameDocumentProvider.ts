@@ -59,12 +59,19 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     const turnCount = engine.getTurnCount();
     const playerState = engine.getState().player;
     const entities = session.getEntities();
+    const npcs = session.getNPCs();
 
     // Create a map of positions to entities for quick lookup
     const entityPositions = new Map<string, { displayChar: string }>();
     for (const entity of entities) {
       const key = `${entity.position.x},${entity.position.y}`;
       entityPositions.set(key, entity);
+    }
+
+    // Add NPCs to the position map
+    for (const npc of npcs) {
+      const key = `${npc.position.x},${npc.position.y}`;
+      entityPositions.set(key, npc);
     }
 
     const lines: string[] = [];

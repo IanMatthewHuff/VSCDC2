@@ -4,7 +4,15 @@
  */
 
 import * as vscode from "vscode";
-import { GameSession, createGame, getTileAt } from "@vscdc/game";
+import {
+  GameSession,
+  createGame,
+  getTileAt,
+  getDialogHandler,
+  DialogTree,
+  DialogNode,
+  NPC,
+} from "@vscdc/game";
 import {
   GameEventType,
   AttackEvent,
@@ -219,6 +227,18 @@ export class GameController {
       });
     }
 
+    // Get all NPCs at the cursor position
+    const npcsAtPosition = this.gameSession
+      .getNPCs()
+      .filter((npc) => npc.position.x === x && npc.position.y === y);
+
+    for (const npc of npcsAtPosition) {
+      entitiesAtPosition.push({
+        name: npc.name,
+        health: npc.health,
+      });
+    }
+
     this.cursorLocationTreeProvider.setLocationInfo({
       position: { x, y },
       tile,
@@ -286,7 +306,7 @@ export class GameController {
   /**
    * Handle a movement command
    */
-  private handleMove(dx: number, dy: number): void {
+  private async handleMove(dx: number, dy: number): Promise<void> {
     if (!this.gameSession) return;
 
     const result = this.gameSession.movePlayer(dx, dy);
@@ -297,8 +317,58 @@ export class GameController {
     // Update cursor location after movement
     this.updateCursorLocation();
 
-    if (!result.success && result.actionType === "blocked") {
+    if (result.actionType === "interact" && result.interactTarget) {
+      // Handle NPC interaction
+      await this.handleNPCInteraction(result.interactTarget);
+    } else if (!result.success && result.actionType === "blocked") {
       this.showBlockedMessage();
+    }
+  }
+
+  /**
+   * Handle interaction with an NPC by showing dialog
+   */
+  private async handleNPCInteraction(npc: NPC): Promise<void> {
+    const dialogHandler = getDialogHandler(npc.type);
+    if (!dialogHandler) {
+      vscode.window.showInformationMessage(`${npc.name} has nothing to say.`);
+      return;
+    }
+
+    const dialogTree = dialogHandler(npc);
+    if (!dialogTree) {
+      vscode.window.showInformationMessage(`${npc.name} has nothing to say.`);
+      return;
+    }
+
+    // Start the dialog at the root node
+    await this.showDialogNode(dialogTree, dialogTree.startNodeId);
+  }
+
+  /**
+   * Display a dialog node and handle the player's choice
+   */
+  private async showDialogNode(dialogTree: DialogTree, nodeId: string): Promise<void> {
+    const node = dialogTree.nodes[nodeId];
+    if (!node) {
+      return;
+    }
+
+    // Create quick pick items from dialog options
+    const quickPickItems = node.options.map((option) => ({
+      label: option.text,
+      nextNodeId: option.nextNodeId,
+    }));
+
+    // Show the quick pick with the NPC's dialog text at the top
+    const selected = await vscode.window.showQuickPick(quickPickItems, {
+      placeHolder: node.text,
+      title: "Dialog",
+    });
+
+    // If user selected an option and it has a next node, show that node
+    if (selected && selected.nextNodeId) {
+      await this.showDialogNode(dialogTree, selected.nextNodeId);
     }
   }
 

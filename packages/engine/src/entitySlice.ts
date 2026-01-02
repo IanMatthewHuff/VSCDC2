@@ -3,13 +3,14 @@
  */
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { EntityState, Enemy, Position } from "./types";
+import { EntityState, Enemy, NPC, Position } from "./types";
 
 /**
  * Initial state for entities
  */
 const initialEntityState: EntityState = {
   entities: {},
+  npcs: {},
 };
 
 /**
@@ -31,6 +32,20 @@ export interface DamageEntityPayload {
  * Payload for removing an entity
  */
 export interface RemoveEntityPayload {
+  id: string;
+}
+
+/**
+ * Payload for adding an NPC
+ */
+export interface AddNPCPayload {
+  npc: NPC;
+}
+
+/**
+ * Payload for removing an NPC
+ */
+export interface RemoveNPCPayload {
   id: string;
 }
 
@@ -75,6 +90,29 @@ const entitySlice = createSlice({
     clearEntities: (state) => {
       state.entities = {};
     },
+
+    /**
+     * Add a new NPC to the game
+     */
+    addNPC: (state, action: PayloadAction<AddNPCPayload>) => {
+      const { npc } = action.payload;
+      state.npcs[npc.id] = npc;
+    },
+
+    /**
+     * Remove an NPC from the game
+     */
+    removeNPC: (state, action: PayloadAction<RemoveNPCPayload>) => {
+      const { id } = action.payload;
+      delete state.npcs[id];
+    },
+
+    /**
+     * Clear all NPCs from the game
+     */
+    clearNPCs: (state) => {
+      state.npcs = {};
+    },
   },
 });
 
@@ -107,6 +145,35 @@ export function selectEntityById(
   return state.entities[id];
 }
 
-export const { addEntity, damageEntity, removeEntity, clearEntities } =
+/**
+ * Selector to get an NPC at a specific position
+ */
+export function selectNPCAt(
+  state: EntityState,
+  position: Position
+): NPC | undefined {
+  return Object.values(state.npcs).find(
+    (npc) => npc.position.x === position.x && npc.position.y === position.y
+  );
+}
+
+/**
+ * Selector to get all NPCs
+ */
+export function selectAllNPCs(state: EntityState): NPC[] {
+  return Object.values(state.npcs);
+}
+
+/**
+ * Selector to get an NPC by ID
+ */
+export function selectNPCById(
+  state: EntityState,
+  id: string
+): NPC | undefined {
+  return state.npcs[id];
+}
+
+export const { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } =
   entitySlice.actions;
 export default entitySlice.reducer;
