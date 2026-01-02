@@ -331,13 +331,13 @@ export class GameController {
   private async handleNPCInteraction(npc: NPC): Promise<void> {
     const dialogHandler = getDialogHandler(npc.type);
     if (!dialogHandler) {
-      vscode.window.showInformationMessage(`${npc.name} has nothing to say.`);
+      vscode.window.showInformationMessage(`No dialog available for this NPC.`);
       return;
     }
 
     const dialogTree = dialogHandler(npc);
     if (!dialogTree) {
-      vscode.window.showInformationMessage(`${npc.name} has nothing to say.`);
+      vscode.window.showInformationMessage(`${npc.name} is not talkative right now.`);
       return;
     }
 

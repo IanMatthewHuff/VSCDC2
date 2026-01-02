@@ -94,8 +94,10 @@ const sageDialogTree: DialogTree = {
 
 /**
  * Dialog handler for the Sage NPC
+ * Currently returns the same dialog tree regardless of NPC state
+ * Future enhancement: Could customize dialog based on NPC health, player progress, etc.
  */
-const sageDialogHandler: DialogHandler = (npc: NPC) => {
+const sageDialogHandler: DialogHandler = (_npc: NPC) => {
   return sageDialogTree;
 };
 
