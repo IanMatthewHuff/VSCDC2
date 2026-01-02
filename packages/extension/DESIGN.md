@@ -16,7 +16,7 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 | VS Code Surface | Game Usage |
 |-----------------|------------|
 | **Text Editor** (Virtual Document) | Main game view—dungeon map, entities |
-| **Tree View** (Sidebar) | Character stats, inventory, equipment |
+| **Tree View** (Sidebar) | Character stats, inventory, equipment, cursor location |
 | **Output Channel** | Combat log, game messages |
 | **Quick Pick** | Action menus, dialog choices |
 | **Status Bar** | HP, dungeon level, quick stats |
@@ -48,6 +48,22 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 ### Decorations
 - Background colors for terrain effects
 - Highlights for selection, danger zones
+
+## Tree Views
+
+### Player Stats View
+- Displays player name and health
+- Updates automatically when player stats change
+- Uses codicons for visual representation
+
+### Cursor Location View
+- Shows information about the current square (player's position)
+- Displays:
+  - Position coordinates (x, y)
+  - Terrain type (floor, wall, etc.)
+  - Entities at the location (if any)
+- Updates automatically when player moves
+- Handles multiple entities per square
 
 ## Extension Activation
 
