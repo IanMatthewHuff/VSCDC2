@@ -9,6 +9,7 @@ import { GAME_VERSION, getEngineVersion } from "@vscdc/game";
 import { GameDocumentProvider } from "./gameDocumentProvider";
 import { GameController } from "./gameController";
 import { PlayerTreeProvider } from "./playerTreeProvider";
+import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 
 let gameController: GameController | undefined;
 let combatOutputChannel: vscode.OutputChannel | undefined;
@@ -33,11 +34,19 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(playerTreeProvider);
 
+  // Create the cursor location tree provider
+  const cursorLocationTreeProvider = new CursorLocationTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("vscdc.cursorLocationView", cursorLocationTreeProvider)
+  );
+  context.subscriptions.push(cursorLocationTreeProvider);
+
   // Create the game controller
   gameController = new GameController(
     context,
     documentProvider,
     playerTreeProvider,
+    cursorLocationTreeProvider,
     combatOutputChannel
   );
   context.subscriptions.push(gameController);
