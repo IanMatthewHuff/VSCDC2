@@ -23,7 +23,27 @@ The `@vscdc/game` package defines all game-specific content—entities, items, r
 ## Content Categories
 
 ### Entities
-*TODO: Document entity definition format*
+**Status: Partially Implemented**
+
+Entity definitions for enemies and NPCs:
+
+**Enemies**:
+- **Target Dummy**: Training entity at position (2,2)
+  - 3 HP, can be attacked and destroyed
+  - Display character: "D", color: brown
+  - Used for testing combat mechanics
+
+**NPCs**:
+- **Sage**: Wise advisor NPC at position (1,2)
+  - 100 HP (not relevant as cannot be attacked)
+  - Display character: "S", color: blue
+  - `canBeAttacked: false` prevents combat
+  - Provides branching dialog interactions
+
+**Entity Factories**:
+- `createTargetDummy(position)`: Creates enemy entity
+- `createSage(position)`: Creates NPC entity
+- Each uses unique ID generation for tracking
 
 ### Items
 *TODO: Document item definition format*
@@ -32,12 +52,68 @@ The `@vscdc/game` package defines all game-specific content—entities, items, r
 *TODO: Document dungeon generation parameters*
 
 ### Combat Rules
-*TODO: Document combat system*
+**Status: Basic Implementation**
+
+Simple melee combat system:
+- Bump-to-attack: Moving onto an enemy's tile triggers combat
+- Fixed damage per attack (1 HP by default)
+- Entities are removed when health reaches 0
+- Combat events are logged to output channel
+
+**NPC Interaction Rules**:
+- Moving onto an NPC tile triggers dialog interaction instead of combat
+- NPCs with `canBeAttacked: false` cannot be targeted
+- Player does not move during NPC interactions
 
 ### Dialog System
-*TODO: Document dialog/conversation format*
+**Status: Implemented**
 
-## Initial Scope (MVP)
+The dialog system enables NPC interactions through branching conversation trees:
+
+**Data Structure**:
+- `DialogTree`: Complete conversation with start node and all nodes
+- `DialogNode`: Single point in conversation with NPC text and player response options
+- `DialogOption`: Player response option that can navigate to another node or end conversation
+- `DialogHandler`: Function that returns a dialog tree for an NPC
+
+**Registration Pattern**:
+- Dialog handlers are registered by NPC type at game initialization
+- `registerDialogHandler(npcType, handler)` maps NPC types to their dialog functions
+- `getDialogHandler(npcType)` retrieves the handler for displaying dialog
+- Handlers are stored in a module-level Map for fast lookup
+
+**Example Dialog Tree Structure**:
+```typescript
+{
+  startNodeId: "greeting",
+  nodes: {
+    greeting: {
+      id: "greeting",
+      text: "Greetings, adventurer...",
+      options: [
+        { text: "Tell me about this place", nextNodeId: "about_place" },
+        { text: "Farewell", nextNodeId: null }  // null ends conversation
+      ]
+    },
+    about_place: {
+      id: "about_place",
+      text: "This dungeon is ancient...",
+      options: [
+        { text: "Thank you", nextNodeId: null }
+      ]
+    }
+  }
+}
+```
+
+**Current NPCs**:
+- **Sage**: Wise NPC at position (1,2) who provides guidance and lore
+  - Cannot be attacked (`canBeAttacked: false`)
+  - Multi-branch dialog tree with various conversation paths
+  - Topics: treasure hunting, dungeon dangers, secrets, and wisdom
+
+### Items
+*TODO: Document item definition format*
 
 Per DESIGN.md, we're starting minimal:
 - Basic player character

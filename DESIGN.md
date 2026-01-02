@@ -311,6 +311,25 @@ Single player only. No shared state, no networking considerations in the archite
 **5. Accessibility — DECIDED: Not a Focus for Now**
 No specific accessibility support initially. Standard VS Code accessibility features may help passively, but we're not designing for screen readers or high contrast modes.
 
+**6. Dialog System — DECIDED: Tree-Based with Quick Pick UI**
+
+We've implemented a dialog system for NPC interactions:
+- **Dialog trees**: Branching conversations defined as nodes with text and response options
+- **Handler-based**: Each NPC type registers a dialog handler function at game initialization
+- **Quick Pick UI**: Dialogs are displayed using VS Code's Quick Pick interface
+  - The NPC's dialog text appears in the placeholder (at the top)
+  - Player response options are shown as selectable items
+  - Navigation through the dialog tree is handled by selecting options
+- **Non-blocking interactions**: Moving onto an NPC tile triggers interaction without moving the player
+- **Protected NPCs**: NPCs can be marked as non-attackable (`canBeAttacked: false`)
+
+**Implementation details**:
+- Dialog handlers live in the game package and are registered at initialization
+- The engine manages NPC entities separately from enemies
+- The extension handles the UI presentation of dialogs
+- Dialog trees are defined in TypeScript for the initial implementation
+- Future expansion: Dialog trees could be externalized to JSON/YAML for modding
+
 ### Resolved
 
 **3. Visual style — DECIDED: ASCII + Decorations + Codicons**
