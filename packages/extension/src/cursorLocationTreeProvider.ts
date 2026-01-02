@@ -4,7 +4,15 @@
 
 import * as vscode from "vscode";
 import { Position } from "@vscdc/engine";
-import { Enemy, Tile } from "@vscdc/game";
+import { Tile } from "@vscdc/game";
+
+/**
+ * A displayable entity with position and health
+ */
+export interface DisplayEntity {
+  name: string;
+  health: { current: number; max: number };
+}
 
 /**
  * Information about the current location
@@ -12,7 +20,7 @@ import { Enemy, Tile } from "@vscdc/game";
 export interface LocationInfo {
   position: Position;
   tile: Tile;
-  entities: Enemy[];
+  entities: DisplayEntity[];
 }
 
 /**
@@ -92,11 +100,13 @@ export class CursorLocationTreeProvider implements vscode.TreeDataProvider<Locat
 
       // Entities at this location
       if (this.locationInfo.entities.length > 0) {
-        const entityNames = this.locationInfo.entities.map((e) => e.name).join(", ");
+        const entityDescriptions = this.locationInfo.entities.map(
+          (e) => `${e.name} (${e.health.current}/${e.health.max} HP)`
+        ).join(", ");
         items.push(
           new LocationInfoItem(
             "Entities",
-            entityNames,
+            entityDescriptions,
             vscode.TreeItemCollapsibleState.None,
             new vscode.ThemeIcon("symbol-misc")
           )

@@ -9,6 +9,9 @@ import { GameDocumentProvider } from "../gameDocumentProvider";
 import { PlayerTreeProvider } from "../playerTreeProvider";
 import { CursorLocationTreeProvider } from "../cursorLocationTreeProvider";
 
+// Store selection change listeners so tests can trigger them
+let selectionChangeListeners: Array<(event: any) => void> = [];
+
 // Mock vscode module - factory must not reference external variables
 vi.mock("vscode", () => {
   // Mock EventEmitter class defined inside the factory
@@ -21,6 +24,12 @@ vi.mock("vscode", () => {
   return {
     Uri: {
       parse: (str: string) => ({ toString: () => str, scheme: "roguelike" }),
+    },
+    Position: class {
+      constructor(
+        public readonly line: number,
+        public readonly character: number
+      ) {}
     },
     EventEmitter: MockEventEmitter,
     TreeItem: class {
@@ -41,8 +50,16 @@ vi.mock("vscode", () => {
       openTextDocument: vi.fn().mockResolvedValue({}),
     },
     window: {
-      showTextDocument: vi.fn().mockResolvedValue({}),
+      showTextDocument: vi.fn().mockResolvedValue({
+        selection: {
+          active: { line: 0, character: 0 },
+        },
+      }),
       showInformationMessage: vi.fn(),
+      onDidChangeTextEditorSelection: vi.fn((listener: (event: any) => void) => {
+        selectionChangeListeners.push(listener);
+        return { dispose: vi.fn() };
+      }),
     },
     commands: {
       executeCommand: vi.fn(),
@@ -79,6 +96,7 @@ describe("GameController", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    selectionChangeListeners = [];
 
     // Create minimal mock context
     mockContext = {
@@ -181,6 +199,216 @@ describe("GameController", () => {
 
       controller.dispose();
       expect(controller.hasActiveGame()).toBe(false);
+    });
+  });
+
+  describe("cursor location tracking", () => {
+    it("should subscribe to selection change events on construction", () => {
+      expect(vscode.window.onDidChangeTextEditorSelection).toHaveBeenCalled();
+      expect(selectionChangeListeners.length).toBe(1);
+    });
+
+    it("should update cursor location when selection changes in game document", async () => {
+      await controller.startGame();
+
+      // Spy on the cursor location tree provider
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+      setLocationInfoSpy.mockClear();
+
+      // Simulate a selection change in the game document
+      // Line 3 = y 0 (after 3 header lines), character 1 = x 1
+      const mockEvent = {
+        textEditor: {
+          document: {
+            uri: {
+              toString: () => "roguelike://game/view",
+            },
+          },
+        },
+        selections: [
+          {
+            active: { line: 3, character: 1 },
+          },
+        ],
+      };
+
+      selectionChangeListeners[0](mockEvent);
+
+      // Should update location info with the converted position
+      expect(setLocationInfoSpy).toHaveBeenCalled();
+      const locationInfo = setLocationInfoSpy.mock.calls[0][0];
+      expect(locationInfo).not.toBeNull();
+      expect(locationInfo?.position.x).toBe(1);
+      expect(locationInfo?.position.y).toBe(0);
+    });
+
+    it("should ignore selection changes in non-game documents", async () => {
+      await controller.startGame();
+
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+      setLocationInfoSpy.mockClear();
+
+      // Simulate a selection change in a different document
+      const mockEvent = {
+        textEditor: {
+          document: {
+            uri: {
+              toString: () => "file:///some/other/file.ts",
+            },
+          },
+        },
+        selections: [
+          {
+            active: { line: 5, character: 10 },
+          },
+        ],
+      };
+
+      selectionChangeListeners[0](mockEvent);
+
+      // Should not update location info
+      expect(setLocationInfoSpy).not.toHaveBeenCalled();
+    });
+
+    it("should clear location info when cursor is outside game map bounds", async () => {
+      await controller.startGame();
+
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+      setLocationInfoSpy.mockClear();
+
+      // Simulate a selection change in the game document but in header area (line 0-2)
+      const mockEvent = {
+        textEditor: {
+          document: {
+            uri: {
+              toString: () => "roguelike://game/view",
+            },
+          },
+        },
+        selections: [
+          {
+            active: { line: 0, character: 0 }, // Header line
+          },
+        ],
+      };
+
+      selectionChangeListeners[0](mockEvent);
+
+      // Should clear location info (set to null)
+      expect(setLocationInfoSpy).toHaveBeenCalledWith(null);
+    });
+
+    it("should correctly convert editor position to game position", async () => {
+      await controller.startGame();
+
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+
+      // Test various positions
+      // Line 3 = y 0, Line 4 = y 1, etc. (3 header lines offset)
+      // Character directly maps to x
+      const testCases = [
+        { line: 3, character: 0, expectedX: 0, expectedY: 0 },
+        { line: 4, character: 2, expectedX: 2, expectedY: 1 },
+        { line: 5, character: 3, expectedX: 3, expectedY: 2 },
+      ];
+
+      for (const testCase of testCases) {
+        setLocationInfoSpy.mockClear();
+
+        const mockEvent = {
+          textEditor: {
+            document: {
+              uri: {
+                toString: () => "roguelike://game/view",
+              },
+            },
+          },
+          selections: [
+            {
+              active: { line: testCase.line, character: testCase.character },
+            },
+          ],
+        };
+
+        selectionChangeListeners[0](mockEvent);
+
+        const locationInfo = setLocationInfoSpy.mock.calls[0][0];
+        expect(locationInfo?.position.x).toBe(testCase.expectedX);
+        expect(locationInfo?.position.y).toBe(testCase.expectedY);
+      }
+    });
+
+    it("should include player as an entity when cursor is on player position", async () => {
+      await controller.startGame();
+
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+      setLocationInfoSpy.mockClear();
+
+      // Player starts at (3, 3) in the test level, which is line 6 (3 header + y=3)
+      const mockEvent = {
+        textEditor: {
+          document: {
+            uri: {
+              toString: () => "roguelike://game/view",
+            },
+          },
+        },
+        selections: [
+          {
+            active: { line: 6, character: 3 }, // y=3, x=3 (player start)
+          },
+        ],
+      };
+
+      selectionChangeListeners[0](mockEvent);
+
+      expect(setLocationInfoSpy).toHaveBeenCalled();
+      const locationInfo = setLocationInfoSpy.mock.calls[0][0];
+      expect(locationInfo).not.toBeNull();
+      expect(locationInfo?.entities.length).toBeGreaterThan(0);
+
+      // The player should be in the entities list with name and health
+      const playerEntity = locationInfo?.entities.find((e: any) => e.name === "Adventurer");
+      expect(playerEntity).toBeDefined();
+      expect(playerEntity?.health).toBeDefined();
+      expect(playerEntity?.health.current).toBe(playerEntity?.health.max);
+    });
+
+    it("should show entity HP in the location info", async () => {
+      await controller.startGame();
+
+      const setLocationInfoSpy = vi.spyOn(cursorLocationTreeProvider, "setLocationInfo");
+      setLocationInfoSpy.mockClear();
+
+      // The target dummy is at (2, 2) in the test level, which is line 5 (3 header + y=2)
+      const mockEvent = {
+        textEditor: {
+          document: {
+            uri: {
+              toString: () => "roguelike://game/view",
+            },
+          },
+        },
+        selections: [
+          {
+            active: { line: 5, character: 2 }, // y=2, x=2 (target dummy position)
+          },
+        ],
+      };
+
+      selectionChangeListeners[0](mockEvent);
+
+      expect(setLocationInfoSpy).toHaveBeenCalled();
+      const locationInfo = setLocationInfoSpy.mock.calls[0][0];
+      expect(locationInfo).not.toBeNull();
+      expect(locationInfo?.entities.length).toBeGreaterThan(0);
+
+      // Entity should have health info
+      const entity = locationInfo?.entities[0];
+      expect(entity?.name).toBe("Target Dummy");
+      expect(entity?.health).toBeDefined();
+      expect(entity?.health.current).toBe(3);
+      expect(entity?.health.max).toBe(3);
     });
   });
 });

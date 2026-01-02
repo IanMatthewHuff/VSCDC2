@@ -23,6 +23,12 @@ export const GAME_ACTIVE_CONTEXT = "vscdc.gameActive";
 /**
  * Controller for managing the active game session
  */
+/**
+ * Number of header lines in the game document before the map grid starts
+ * (level name, turn count, empty line)
+ */
+const MAP_HEADER_LINES = 3;
+
 export class GameController {
   private gameSession: GameSession | null = null;
   private documentProvider: GameDocumentProvider;
@@ -31,6 +37,7 @@ export class GameController {
   private combatOutputChannel: vscode.OutputChannel;
   private gameEditor: vscode.TextEditor | null = null;
   private eventUnsubscribers: Array<() => void> = [];
+  private disposables: vscode.Disposable[] = [];
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -43,6 +50,13 @@ export class GameController {
     this.playerTreeProvider = playerTreeProvider;
     this.cursorLocationTreeProvider = cursorLocationTreeProvider;
     this.combatOutputChannel = combatOutputChannel;
+
+    // Subscribe to cursor/selection changes to update cursor location view
+    this.disposables.push(
+      vscode.window.onDidChangeTextEditorSelection((event) => {
+        this.handleSelectionChange(event);
+      })
+    );
   }
 
   /**
@@ -117,29 +131,116 @@ export class GameController {
   }
 
   /**
-   * Update the cursor location tree view with current player position info
+   * Handle VS Code text editor selection changes
+   * Updates the cursor location view when the cursor moves in the game document
    */
-  private updateCursorLocation(): void {
+  private handleSelectionChange(event: vscode.TextEditorSelectionChangeEvent): void {
+    // Only handle selection changes in the game document
+    if (event.textEditor.document.uri.toString() !== GAME_DOCUMENT_URI.toString()) {
+      return;
+    }
+
     if (!this.gameSession) return;
 
-    const position = this.gameSession.engine.getPlayerPosition();
-    const tile = getTileAt(this.gameSession.level, position.x, position.y);
+    // Get the cursor position (use the active/primary selection)
+    const cursorPosition = event.selections[0].active;
+    const gamePosition = this.convertEditorPositionToGamePosition(cursorPosition);
 
-    // If tile is undefined (shouldn't happen), bail out
-    if (!tile) return;
+    if (!gamePosition) {
+      // Cursor is outside the game map area
+      this.cursorLocationTreeProvider.setLocationInfo(null);
+      return;
+    }
 
-    // Get all entities at the player's position
+    this.updateCursorLocationAtPosition(gamePosition.x, gamePosition.y);
+  }
+
+  /**
+   * Convert VS Code editor position (line, character) to game world position (x, y)
+   * Returns null if the editor position is outside the game map area
+   */
+  private convertEditorPositionToGamePosition(
+    editorPosition: vscode.Position
+  ): { x: number; y: number } | null {
+    if (!this.gameSession) return null;
+
+    const { level } = this.gameSession;
+
+    // Convert editor line/character to game coordinates
+    // The game map starts after MAP_HEADER_LINES header lines
+    const y = editorPosition.line - MAP_HEADER_LINES;
+    const x = editorPosition.character;
+
+    // Check if the position is within the game map bounds
+    if (x < 0 || x >= level.width || y < 0 || y >= level.height) {
+      return null;
+    }
+
+    return { x, y };
+  }
+
+  /**
+   * Update the cursor location tree view with info at the specified game position
+   */
+  private updateCursorLocationAtPosition(x: number, y: number): void {
+    if (!this.gameSession) return;
+
+    const tile = getTileAt(this.gameSession.level, x, y);
+
+    // If tile is undefined, position is out of bounds
+    if (!tile) {
+      this.cursorLocationTreeProvider.setLocationInfo(null);
+      return;
+    }
+
+    // Build list of entities at the cursor position
+    const entitiesAtPosition: Array<{ name: string; health: { current: number; max: number } }> = [];
+
+    // Check if player is at this position
+    const playerPos = this.gameSession.engine.getPlayerPosition();
+    if (playerPos.x === x && playerPos.y === y) {
+      entitiesAtPosition.push({
+        name: this.gameSession.engine.getPlayerName(),
+        health: this.gameSession.engine.getPlayerHealth(),
+      });
+    }
+
+    // Get all enemies at the cursor position
     // Note: We filter all entities rather than using getEntityAt() because
     // getEntityAt() returns only one entity, but we need to support multiple entities per square
-    const entitiesAtPosition = this.gameSession
+    const enemiesAtPosition = this.gameSession
       .getEntities()
-      .filter((e) => e.position.x === position.x && e.position.y === position.y);
+      .filter((e) => e.position.x === x && e.position.y === y);
+
+    for (const enemy of enemiesAtPosition) {
+      entitiesAtPosition.push({
+        name: enemy.name,
+        health: enemy.health,
+      });
+    }
 
     this.cursorLocationTreeProvider.setLocationInfo({
-      position,
+      position: { x, y },
       tile,
       entities: entitiesAtPosition,
     });
+  }
+
+  /**
+   * Update the cursor location tree view based on current editor cursor
+   * Called when starting a game to initialize the view
+   */
+  private updateCursorLocation(): void {
+    if (!this.gameEditor) return;
+
+    const cursorPosition = this.gameEditor.selection.active;
+    const gamePosition = this.convertEditorPositionToGamePosition(cursorPosition);
+
+    if (gamePosition) {
+      this.updateCursorLocationAtPosition(gamePosition.x, gamePosition.y);
+    } else {
+      this.cursorLocationTreeProvider.setLocationInfo(null);
+    }
   }
 
   /**
@@ -218,5 +319,9 @@ export class GameController {
 
   dispose(): void {
     this.stopGame();
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
+    this.disposables = [];
   }
 }

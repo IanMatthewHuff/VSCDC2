@@ -85,12 +85,7 @@ describe("CursorLocationTreeProvider", () => {
         tile: { type: TileType.Floor, displayChar: "." },
         entities: [
           {
-            id: "enemy1",
             name: "Goblin",
-            type: "goblin",
-            position: { x: 2, y: 2 },
-            displayChar: "g",
-            color: "green",
             health: { current: 10, max: 10 },
           },
         ],
@@ -107,9 +102,9 @@ describe("CursorLocationTreeProvider", () => {
       expect(children[1].label).toBe("Terrain");
       expect(children[1].description).toBe(TileType.Floor);
 
-      // Entities (present)
+      // Entities (present with HP)
       expect(children[2].label).toBe("Entities");
-      expect(children[2].description).toBe("Goblin");
+      expect(children[2].description).toBe("Goblin (10/10 HP)");
       expect((children[2].iconPath as any).id).toBe("symbol-misc");
     });
 
@@ -119,21 +114,11 @@ describe("CursorLocationTreeProvider", () => {
         tile: { type: TileType.Floor, displayChar: "." },
         entities: [
           {
-            id: "enemy1",
             name: "Goblin",
-            type: "goblin",
-            position: { x: 1, y: 1 },
-            displayChar: "g",
-            color: "green",
             health: { current: 10, max: 10 },
           },
           {
-            id: "enemy2",
             name: "Orc",
-            type: "orc",
-            position: { x: 1, y: 1 },
-            displayChar: "o",
-            color: "red",
             health: { current: 15, max: 15 },
           },
         ],
@@ -142,9 +127,9 @@ describe("CursorLocationTreeProvider", () => {
       const children = await provider.getChildren();
       expect(children).toHaveLength(3);
 
-      // Entities (multiple)
+      // Entities (multiple with HP)
       expect(children[2].label).toBe("Entities");
-      expect(children[2].description).toBe("Goblin, Orc");
+      expect(children[2].description).toBe("Goblin (10/10 HP), Orc (15/15 HP)");
     });
 
     it("returns empty array after clearing location info", async () => {
