@@ -17,7 +17,7 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 |-----------------|------------|
 | **Text Editor** (Virtual Document) | Main game view—dungeon map, entities, NPCs |
 | **Tree View** (Sidebar) | Character stats, inventory, equipment, cursor location |
-| **Output Channel** | Combat log, game messages |
+| **Output Channels** | Game Log (all), Combat Log (attacks/damage), Dialog Log (conversations) |
 | **Quick Pick** | Action menus, **NPC dialog choices** |
 | **Status Bar** | HP, dungeon level, quick stats |
 
@@ -72,36 +72,63 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 The extension handles NPC dialog interactions using VS Code's Quick Pick interface:
 
 **Dialog Display**:
-- NPC's dialog text appears in the Quick Pick placeholder (at the top)
+- NPC's dialog text appears as a non-selectable separator header at the top
+- A "Your response:" separator divides NPC text from player choices
 - Player response options are shown as selectable items below
 - Selecting an option navigates to the next dialog node or ends the conversation
 
 **Interaction Flow**:
-1. Player moves onto an NPC tile
+1. Player moves onto an NPC tile (bumps into NPC)
 2. Game session returns `actionType: "interact"` with the target NPC
 3. `GameController.handleNPCInteraction()` retrieves the dialog handler
-4. Dialog tree is displayed via `showDialogNode()` recursive function
-5. Player selects responses, navigating through the tree
-6. Dialog ends when an option with `nextNodeId: null` is selected
+4. `runDialog()` traverses the dialog tree, collecting player choices
+5. Dialog is logged to the Dialog Log output channel
+6. Results are returned as a path of choices made (or `null` if cancelled)
 
 **Implementation**:
 ```typescript
-// Show dialog with NPC text at the top
-const selected = await vscode.window.showQuickPick(options, {
-  placeHolder: node.text,  // NPC's dialog
-  title: "Dialog"
-});
+// Quick Pick items with separator header
+const items: DialogQuickPickItem[] = [
+  { label: node.text, kind: QuickPickItemKind.Separator },  // NPC text (non-selectable)
+  { label: "Your response:", kind: QuickPickItemKind.Separator },  // Divider
+  ...options  // Player choices
+];
 
-// Navigate to next node if selected
-if (selected?.nextNodeId) {
-  await this.showDialogNode(dialogTree, selected.nextNodeId);
-}
+const selected = await vscode.window.showQuickPick(items, {
+  title: `Talking to ${npcName}`,
+  ignoreFocusOut: true
+});
 ```
 
 **User Experience**:
+- Clear visual hierarchy: NPC text at top, player choices below
 - Non-blocking: Dialog is async, doesn't freeze the editor
-- Dismissible: Clicking away or pressing Escape cancels the dialog
-- Clear context: "Dialog" title and NPC text provide context
+- Dismissible: Pressing Escape cancels the dialog (returns `null`)
+- Logged: All dialog interactions appear in the Dialog Log
+
+## Output Channels
+
+The extension maintains three output channels for game logging:
+
+| Channel | Purpose | Contents |
+|---------|---------|----------|
+| **Game Log** | Combined log of all events | `[Combat]` and `[Dialog]` prefixed entries |
+| **Combat Log** | Combat-specific events | Attack damage, entity deaths |
+| **Dialog Log** | NPC conversation events | Dialog start/end, NPC text, player choices |
+
+**Logging Implementation**:
+```typescript
+// Helper methods write to both specific and combined channels
+private logCombat(message: string): void {
+  this.outputChannels.combatLog.appendLine(message);
+  this.outputChannels.gameLog.appendLine(`[Combat] ${message}`);
+}
+
+private logDialog(message: string): void {
+  this.outputChannels.dialogLog.appendLine(message);
+  this.outputChannels.gameLog.appendLine(`[Dialog] ${message}`);
+}
+```
 
 ## Extension Activation
 

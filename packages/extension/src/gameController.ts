@@ -29,6 +29,18 @@ import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 export const GAME_ACTIVE_CONTEXT = "vscdc.gameActive";
 
 /**
+ * Output channels for game logging
+ */
+export interface GameOutputChannels {
+  /** Combined log of all game events */
+  gameLog: vscode.OutputChannel;
+  /** Combat-specific events (attacks, damage, deaths) */
+  combatLog: vscode.OutputChannel;
+  /** Dialog-specific events (NPC conversations) */
+  dialogLog: vscode.OutputChannel;
+}
+
+/**
  * Controller for managing the active game session
  */
 /**
@@ -42,7 +54,7 @@ export class GameController {
   private documentProvider: GameDocumentProvider;
   private playerTreeProvider: PlayerTreeProvider;
   private cursorLocationTreeProvider: CursorLocationTreeProvider;
-  private combatOutputChannel: vscode.OutputChannel;
+  private outputChannels: GameOutputChannels;
   private gameEditor: vscode.TextEditor | null = null;
   private eventUnsubscribers: Array<() => void> = [];
   private disposables: vscode.Disposable[] = [];
@@ -52,12 +64,12 @@ export class GameController {
     documentProvider: GameDocumentProvider,
     playerTreeProvider: PlayerTreeProvider,
     cursorLocationTreeProvider: CursorLocationTreeProvider,
-    combatOutputChannel: vscode.OutputChannel
+    outputChannels: GameOutputChannels
   ) {
     this.documentProvider = documentProvider;
     this.playerTreeProvider = playerTreeProvider;
     this.cursorLocationTreeProvider = cursorLocationTreeProvider;
-    this.combatOutputChannel = combatOutputChannel;
+    this.outputChannels = outputChannels;
 
     // Subscribe to cursor/selection changes to update cursor location view
     this.disposables.push(
@@ -82,10 +94,18 @@ export class GameController {
     // Subscribe to combat events
     this.subscribeToEvents();
 
-    // Show and clear the combat output channel
-    this.combatOutputChannel.clear();
-    this.combatOutputChannel.appendLine("=== Combat Log ===");
-    this.combatOutputChannel.appendLine("");
+    // Clear and initialize all output channels
+    this.outputChannels.gameLog.clear();
+    this.outputChannels.gameLog.appendLine("=== Game Log ===");
+    this.outputChannels.gameLog.appendLine("");
+    
+    this.outputChannels.combatLog.clear();
+    this.outputChannels.combatLog.appendLine("=== Combat Log ===");
+    this.outputChannels.combatLog.appendLine("");
+    
+    this.outputChannels.dialogLog.clear();
+    this.outputChannels.dialogLog.appendLine("=== Dialog Log ===");
+    this.outputChannels.dialogLog.appendLine("");
 
     // Open the game document
     const doc = await vscode.workspace.openTextDocument(GAME_DOCUMENT_URI);
@@ -101,6 +121,22 @@ export class GameController {
   }
 
   /**
+   * Log a message to the combat log (and game log)
+   */
+  private logCombat(message: string): void {
+    this.outputChannels.combatLog.appendLine(message);
+    this.outputChannels.gameLog.appendLine(`[Combat] ${message}`);
+  }
+
+  /**
+   * Log a message to the dialog log (and game log)
+   */
+  private logDialog(message: string): void {
+    this.outputChannels.dialogLog.appendLine(message);
+    this.outputChannels.gameLog.appendLine(`[Dialog] ${message}`);
+  }
+
+  /**
    * Subscribe to game events for combat logging
    */
   private subscribeToEvents(): void {
@@ -112,7 +148,7 @@ export class GameController {
     const unsubAttack = engine.onEvent(GameEventType.ATTACK, (event: AnyGameEvent) => {
       const attackEvent = event as AttackEvent;
       const message = `${attackEvent.attackerName} attacked ${attackEvent.targetName} for ${attackEvent.damage} damage. HP: ${attackEvent.targetRemainingHp}/${attackEvent.targetMaxHp}`;
-      this.combatOutputChannel.appendLine(message);
+      this.logCombat(message);
     });
     this.eventUnsubscribers.push(unsubAttack);
 
@@ -122,7 +158,7 @@ export class GameController {
       (event: AnyGameEvent) => {
         const destroyedEvent = event as EntityDestroyedEvent;
         const message = `${destroyedEvent.entityName} was destroyed by ${destroyedEvent.destroyedByName}!`;
-        this.combatOutputChannel.appendLine(message);
+        this.logCombat(message);
       }
     );
     this.eventUnsubscribers.push(unsubDestroyed);
@@ -341,35 +377,118 @@ export class GameController {
       return;
     }
 
-    // Start the dialog at the root node
-    await this.showDialogNode(dialogTree, dialogTree.startNodeId);
+    // Log dialog start
+    this.logDialog(`Started conversation with ${npc.name}`);
+
+    // Run the dialog and collect the result path
+    const resultPath = await this.runDialog(npc.name, dialogTree);
+
+    // Log dialog end
+    if (resultPath === null) {
+      this.logDialog(`Conversation with ${npc.name} was cancelled`);
+    } else {
+      this.logDialog(`Ended conversation with ${npc.name}. Path: ${resultPath.join(" → ")}`);
+    }
   }
 
   /**
-   * Display a dialog node and handle the player's choice
+   * Run a complete dialog tree and return the path of choices made
+   * @param npcName Name of the NPC for display purposes
+   * @param dialogTree The dialog tree to traverse
+   * @returns Array of choice texts representing the path taken, or null if cancelled
    */
-  private async showDialogNode(dialogTree: DialogTree, nodeId: string): Promise<void> {
-    const node = dialogTree.nodes[nodeId];
-    if (!node) {
-      return;
+  private async runDialog(npcName: string, dialogTree: DialogTree): Promise<string[] | null> {
+    const resultPath: string[] = [];
+    let currentNodeId: string | null = dialogTree.startNodeId;
+
+    while (currentNodeId !== null) {
+      const node = dialogTree.nodes[currentNodeId];
+      if (!node) {
+        break;
+      }
+
+      const selectedChoice = await this.showDialogNode(npcName, node);
+
+      if (selectedChoice === null) {
+        // User cancelled (pressed Escape)
+        return null;
+      }
+
+      // Log the choice
+      this.logDialog(`  ${npcName}: "${node.text}"`);
+      this.logDialog(`  You: "${selectedChoice.text}"`);
+
+      // Add choice to result path
+      resultPath.push(selectedChoice.text);
+
+      // Move to next node (null means end of dialog)
+      currentNodeId = selectedChoice.nextNodeId;
     }
 
-    // Create quick pick items from dialog options
-    const quickPickItems = node.options.map((option) => ({
-      label: option.text,
-      nextNodeId: option.nextNodeId,
-    }));
+    return resultPath;
+  }
 
-    // Show the quick pick with the NPC's dialog text at the top
-    const selected = await vscode.window.showQuickPick(quickPickItems, {
-      placeHolder: node.text,
-      title: "Dialog",
+  /**
+   * Display a single dialog node and return the player's choice
+   * Shows NPC text at the top, then a separator, then player choices
+   * 
+   * @param npcName Name of the NPC for the title
+   * @param node The dialog node to display
+   * @returns The selected option, or null if cancelled
+   */
+  private async showDialogNode(
+    npcName: string, 
+    node: DialogNode
+  ): Promise<{ text: string; nextNodeId: string | null } | null> {
+    // Build quick pick items:
+    // 1. NPC text as a regular item (clicking it re-shows the dialog)
+    // 2. Separator to divide NPC text from choices
+    // 3. Player choice options
+    interface DialogQuickPickItem extends vscode.QuickPickItem {
+      isNpcText?: boolean;
+      nextNodeId?: string | null;
+      optionText?: string;
+    }
+
+    const items: DialogQuickPickItem[] = [
+      // NPC dialog text as a non-actionable item
+      // If clicked, we'll detect it and re-show the same node
+      { 
+        label: `💬 ${node.text}`,
+        isNpcText: true,
+      },
+      // Separator between NPC text and player choices
+      { 
+        label: "Your response",
+        kind: vscode.QuickPickItemKind.Separator,
+      },
+      // Player choice options
+      ...node.options.map((option) => ({
+        label: option.text,
+        nextNodeId: option.nextNodeId,
+        optionText: option.text,
+      })),
+    ];
+
+    const selected = await vscode.window.showQuickPick(items, {
+      title: `Talking to ${npcName}`,
+      ignoreFocusOut: true,
     });
 
-    // If user selected an option and it has a next node, show that node
-    if (selected && selected.nextNodeId) {
-      await this.showDialogNode(dialogTree, selected.nextNodeId);
+    if (!selected) {
+      // User cancelled (pressed Escape)
+      return null;
     }
+
+    if (selected.isNpcText) {
+      // User clicked the NPC text - re-show the same dialog node
+      return this.showDialogNode(npcName, node);
+    }
+
+    return {
+      text: selected.optionText!,
+      nextNodeId: selected.nextNodeId ?? null,
+    };
   }
 
   /**

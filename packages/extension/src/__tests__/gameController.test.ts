@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GameController, GAME_ACTIVE_CONTEXT } from "../gameController";
+import { GameController, GAME_ACTIVE_CONTEXT, GameOutputChannels } from "../gameController";
 import { GameDocumentProvider } from "../gameDocumentProvider";
 import { PlayerTreeProvider } from "../playerTreeProvider";
 import { CursorLocationTreeProvider } from "../cursorLocationTreeProvider";
@@ -86,13 +86,24 @@ function createMockOutputChannel(): vscode.OutputChannel {
   };
 }
 
+/**
+ * Creates mock GameOutputChannels for testing
+ */
+function createMockOutputChannels(): GameOutputChannels {
+  return {
+    gameLog: createMockOutputChannel(),
+    combatLog: createMockOutputChannel(),
+    dialogLog: createMockOutputChannel(),
+  };
+}
+
 describe("GameController", () => {
   let controller: GameController;
   let mockContext: vscode.ExtensionContext;
   let documentProvider: GameDocumentProvider;
   let playerTreeProvider: PlayerTreeProvider;
   let cursorLocationTreeProvider: CursorLocationTreeProvider;
-  let mockOutputChannel: vscode.OutputChannel;
+  let mockOutputChannels: GameOutputChannels;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -106,13 +117,13 @@ describe("GameController", () => {
     documentProvider = new GameDocumentProvider();
     playerTreeProvider = new PlayerTreeProvider();
     cursorLocationTreeProvider = new CursorLocationTreeProvider();
-    mockOutputChannel = createMockOutputChannel();
+    mockOutputChannels = createMockOutputChannels();
     controller = new GameController(
       mockContext,
       documentProvider,
       playerTreeProvider,
       cursorLocationTreeProvider,
-      mockOutputChannel
+      mockOutputChannels
     );
   });
 
@@ -162,8 +173,15 @@ describe("GameController", () => {
     it("should clear and initialize the combat output channel", async () => {
       await controller.startGame();
 
-      expect(mockOutputChannel.clear).toHaveBeenCalled();
-      expect(mockOutputChannel.appendLine).toHaveBeenCalledWith("=== Combat Log ===");
+      // All output channels should be cleared
+      expect(mockOutputChannels.gameLog.clear).toHaveBeenCalled();
+      expect(mockOutputChannels.combatLog.clear).toHaveBeenCalled();
+      expect(mockOutputChannels.dialogLog.clear).toHaveBeenCalled();
+      
+      // Each channel should have its header
+      expect(mockOutputChannels.gameLog.appendLine).toHaveBeenCalledWith("=== Game Log ===");
+      expect(mockOutputChannels.combatLog.appendLine).toHaveBeenCalledWith("=== Combat Log ===");
+      expect(mockOutputChannels.dialogLog.appendLine).toHaveBeenCalledWith("=== Dialog Log ===");
     });
   });
 

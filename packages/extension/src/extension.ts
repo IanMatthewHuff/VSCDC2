@@ -7,19 +7,31 @@
 import * as vscode from "vscode";
 import { GAME_VERSION, getEngineVersion } from "@vscdc/game";
 import { GameDocumentProvider } from "./gameDocumentProvider";
-import { GameController } from "./gameController";
+import { GameController, GameOutputChannels } from "./gameController";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 
 let gameController: GameController | undefined;
-let combatOutputChannel: vscode.OutputChannel | undefined;
+let outputChannels: GameOutputChannels | undefined;
 
 export function activate(context: vscode.ExtensionContext): void {
   console.log("VS Code Dungeon Crawler extension activating...");
 
-  // Create the combat output channel for logging attacks
-  combatOutputChannel = vscode.window.createOutputChannel("Dungeon Crawler - Combat");
-  context.subscriptions.push(combatOutputChannel);
+  // Create output channels for game logging
+  // Game Log shows all events, Combat and Dialog show filtered events
+  const gameLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Game Log");
+  const combatLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Combat");
+  const dialogLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Dialog");
+  
+  outputChannels = {
+    gameLog: gameLogChannel,
+    combatLog: combatLogChannel,
+    dialogLog: dialogLogChannel,
+  };
+  
+  context.subscriptions.push(gameLogChannel);
+  context.subscriptions.push(combatLogChannel);
+  context.subscriptions.push(dialogLogChannel);
 
   // Create the document provider for the game view
   const documentProvider = new GameDocumentProvider();
@@ -47,7 +59,7 @@ export function activate(context: vscode.ExtensionContext): void {
     documentProvider,
     playerTreeProvider,
     cursorLocationTreeProvider,
-    combatOutputChannel
+    outputChannels
   );
   context.subscriptions.push(gameController);
 
@@ -90,6 +102,10 @@ export function activate(context: vscode.ExtensionContext): void {
 export function deactivate(): void {
   gameController?.dispose();
   gameController = undefined;
-  combatOutputChannel?.dispose();
-  combatOutputChannel = undefined;
+  if (outputChannels) {
+    outputChannels.gameLog.dispose();
+    outputChannels.combatLog.dispose();
+    outputChannels.dialogLog.dispose();
+    outputChannels = undefined;
+  }
 }
