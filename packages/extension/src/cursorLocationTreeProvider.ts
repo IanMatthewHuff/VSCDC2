@@ -56,6 +56,11 @@ export class CursorLocationTreeProvider implements vscode.TreeDataProvider<Locat
     return element;
   }
 
+  /**
+   * Get tree children for the given element.
+   * Returns root-level items (position, terrain, entities) when element is undefined.
+   * Returns empty array for child elements (all items are leaf nodes).
+   */
   getChildren(element?: LocationInfoItem): Thenable<LocationInfoItem[]> {
     if (!this.locationInfo) {
       return Promise.resolve([]);

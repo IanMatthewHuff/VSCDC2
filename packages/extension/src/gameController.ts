@@ -129,6 +129,8 @@ export class GameController {
     if (!tile) return;
 
     // Get all entities at the player's position
+    // Note: We filter all entities rather than using getEntityAt() because
+    // getEntityAt() returns only one entity, but we need to support multiple entities per square
     const entitiesAtPosition = this.gameSession
       .getEntities()
       .filter((e) => e.position.x === position.x && e.position.y === position.y);
