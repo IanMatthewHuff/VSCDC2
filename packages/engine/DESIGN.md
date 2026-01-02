@@ -25,12 +25,18 @@ The Redux store is organized into slices:
 {
   player: {
     id: string,
+    name: string,
     position: { x: number, y: number },
     displayChar: string,
-    color: string
+    color: string,
+    health: { current: number, max: number }
   },
   game: {
     turnCount: number
+  },
+  entities: {
+    entities: Record<string, Enemy>,
+    npcs: Record<string, NPC>
   }
 }
 ```
@@ -65,18 +71,35 @@ The engine uses custom middleware to emit game events:
 
 The engine exposes a clean API for the UI layer via the `GameEngine` class:
 
+**Player Management**:
 - `onStateChanged(callback)` — Subscribe to state changes for rendering
 - `onEvent(eventType, callback)` — Subscribe to specific game events
 - `getState()` — Get the current game state
 - `movePlayerTo(x, y)` — Move player to absolute position
 - `movePlayerBy(dx, dy)` — Move player by relative offset
 - `getPlayerPosition()` — Query player position
+- `getPlayerName()` — Query player name
+- `getPlayerHealth()` — Query player health stats
 - `getTurnCount()` — Query current turn count
+
+**Entity Management**:
+- `addEntity(entity)` — Add an enemy to the game
+- `getEntities()` — Get all enemies
+- `getEntityAt(position)` — Get enemy at position
+- `getEntityById(id)` — Get enemy by ID
+- `removeEntity(id)` — Remove an enemy
+- `attack(targetId, damage)` — Attack an enemy
+
+**NPC Management**:
+- `addNPC(npc)` — Add an NPC to the game
+- `getNPCs()` — Get all NPCs
+- `getNPCAt(position)` — Get NPC at position
+- `getNPCById(id)` — Get NPC by ID
+- `removeNPC(id)` — Remove an NPC
 
 Future additions:
 - `submitAction(action)` — Submit generic actions
 - `getVisibleMap()` — Query visible map state
-- `getEntityData(id)` — Query entity details
 - `serialize() / deserialize()` — Save/load functionality
 
 ## Design Principles
@@ -92,18 +115,21 @@ Future additions:
 ### Completed
 - ✓ Redux Toolkit integration
 - ✓ Store factory function with configuration options
-- ✓ Player slice with movement actions
+- ✓ Player slice with movement actions and health tracking
 - ✓ Game slice with turn management
+- ✓ Entity slice with enemy and NPC management
 - ✓ Event middleware for emitting game events
-- ✓ GameEngine API wrapper
-- ✓ Basic position and player types
+- ✓ GameEngine API wrapper with entity and NPC methods
+- ✓ Combat system with attack and damage mechanics
+- ✓ NPC interaction event types
+- ✓ Comprehensive test suite for core functionality
 
 ### Planned
 - Map system and spatial queries
 - Action validation system
-- Full entity system
 - State serialization/deserialization
-- Comprehensive test suite
+- More event types and handlers
+- Advanced combat mechanics
 
 ## Key Systems
 
@@ -111,10 +137,54 @@ Future additions:
 *Implemented via `gameSlice` - tracks turn count and advances on player actions*
 
 ### Entity System
-*Partially implemented - Player entity exists, full system planned*
+**Status: Implemented**
+
+Manages all game entities (enemies and NPCs) through Redux:
+
+**Entity Types**:
+- `Enemy`: Attackable entities with health that can be destroyed
+- `NPC`: Interactive entities that trigger dialog when approached
+  - Have `canBeAttacked` flag to prevent combat
+  - Trigger `NPC_INTERACTION` events when player moves onto their tile
+
+**Entity Slice** (`entitySlice.ts`):
+- Manages two separate collections: `entities` (enemies) and `npcs`
+- Actions: `addEntity`, `damageEntity`, `removeEntity`, `addNPC`, `removeNPC`
+- Selectors: `selectEntityAt`, `selectNPCAt`, `selectAllEntities`, `selectAllNPCs`
+- Position-based queries for spatial lookups
+
+**Entity Management Flow**:
+1. Game package creates entity definitions (e.g., `createSage()`, `createTargetDummy()`)
+2. Entities are added to engine via `addEntity()` or `addNPC()`
+3. Engine stores entities in Redux state
+4. Extension queries entities for rendering and interaction
 
 ### Event Bus
-*Implemented via custom middleware - emits events on state changes*
+**Status: Implemented**
+
+Custom middleware that emits game events for UI consumption:
+
+**Event Types**:
+- `PLAYER_MOVED`: Emitted when player position changes
+- `TURN_ADVANCED`: Emitted when game turn increments
+- `STATE_CHANGED`: General state change notification
+- `ATTACK`: Emitted when an attack occurs (includes damage details)
+- `ENTITY_DESTROYED`: Emitted when an entity reaches 0 HP
+- `NPC_INTERACTION`: Emitted when player interacts with an NPC
+
+**Event Flow**:
+1. Action dispatched to Redux store
+2. Middleware intercepts action and compares prev/next state
+3. Relevant events are emitted based on state changes
+4. UI layer receives events via `engine.onEvent(eventType, handler)`
+5. Event handlers update UI (e.g., combat log, notifications)
+
+**Usage Pattern**:
+```typescript
+engine.onEvent(GameEventType.ATTACK, (event) => {
+  console.log(`${event.attackerName} attacked ${event.targetName}`);
+});
+```
 
 ### Map System
 *Placeholder*

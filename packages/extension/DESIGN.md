@@ -15,10 +15,10 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 
 | VS Code Surface | Game Usage |
 |-----------------|------------|
-| **Text Editor** (Virtual Document) | Main game view—dungeon map, entities |
+| **Text Editor** (Virtual Document) | Main game view—dungeon map, entities, NPCs |
 | **Tree View** (Sidebar) | Character stats, inventory, equipment, cursor location |
 | **Output Channel** | Combat log, game messages |
-| **Quick Pick** | Action menus, dialog choices |
+| **Quick Pick** | Action menus, **NPC dialog choices** |
 | **Status Bar** | HP, dungeon level, quick stats |
 
 ## Design Principles
@@ -61,9 +61,47 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 - Displays:
   - Position coordinates (x, y)
   - Terrain type (floor, wall, etc.)
-  - Entities at the location (if any)
-- Updates automatically when player moves
+  - Entities at the location (enemies and NPCs)
+- Updates automatically when player moves or cursor moves
 - Handles multiple entities per square
+
+## NPC Dialog System
+
+**Status: Implemented**
+
+The extension handles NPC dialog interactions using VS Code's Quick Pick interface:
+
+**Dialog Display**:
+- NPC's dialog text appears in the Quick Pick placeholder (at the top)
+- Player response options are shown as selectable items below
+- Selecting an option navigates to the next dialog node or ends the conversation
+
+**Interaction Flow**:
+1. Player moves onto an NPC tile
+2. Game session returns `actionType: "interact"` with the target NPC
+3. `GameController.handleNPCInteraction()` retrieves the dialog handler
+4. Dialog tree is displayed via `showDialogNode()` recursive function
+5. Player selects responses, navigating through the tree
+6. Dialog ends when an option with `nextNodeId: null` is selected
+
+**Implementation**:
+```typescript
+// Show dialog with NPC text at the top
+const selected = await vscode.window.showQuickPick(options, {
+  placeHolder: node.text,  // NPC's dialog
+  title: "Dialog"
+});
+
+// Navigate to next node if selected
+if (selected?.nextNodeId) {
+  await this.showDialogNode(dialogTree, selected.nextNodeId);
+}
+```
+
+**User Experience**:
+- Non-blocking: Dialog is async, doesn't freeze the editor
+- Dismissible: Clicking away or pressing Escape cancels the dialog
+- Clear context: "Dialog" title and NPC text provide context
 
 ## Extension Activation
 

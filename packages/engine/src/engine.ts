@@ -4,7 +4,7 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState, Enemy, Position } from "./types";
+import { GameState, Enemy, NPC, Position } from "./types";
 import { movePlayer, movePlayerBy } from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
 import {
@@ -14,6 +14,11 @@ import {
   selectEntityAt,
   selectAllEntities,
   selectEntityById,
+  addNPC,
+  removeNPC,
+  selectNPCAt,
+  selectAllNPCs,
+  selectNPCById,
 } from "./entitySlice";
 import { GameEventType, AnyGameEvent } from "./events";
 import { EventHandler, queueAttackEvent } from "./eventMiddleware";
@@ -163,6 +168,45 @@ export class GameEngine {
    */
   public removeEntity(id: string): void {
     this.store.dispatch(removeEntity({ id }));
+  }
+
+  // ============================================
+  // NPC Management
+  // ============================================
+
+  /**
+   * Add an NPC entity to the game
+   */
+  public addNPC(npc: NPC): void {
+    this.store.dispatch(addNPC({ npc }));
+  }
+
+  /**
+   * Get all NPCs in the game
+   */
+  public getNPCs(): NPC[] {
+    return selectAllNPCs(this.store.getState().entities);
+  }
+
+  /**
+   * Get an NPC at a specific position
+   */
+  public getNPCAt(position: Position): NPC | undefined {
+    return selectNPCAt(this.store.getState().entities, position);
+  }
+
+  /**
+   * Get an NPC by its ID
+   */
+  public getNPCById(id: string): NPC | undefined {
+    return selectNPCById(this.store.getState().entities, id);
+  }
+
+  /**
+   * Remove an NPC from the game
+   */
+  public removeNPC(id: string): void {
+    this.store.dispatch(removeNPC({ id }));
   }
 
   // ============================================

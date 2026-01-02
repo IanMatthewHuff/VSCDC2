@@ -5,8 +5,10 @@
  * rules, and content. It depends on @vscdc/engine.
  */
 
-import { ENGINE_VERSION, GameEngine, Enemy, Position } from "@vscdc/engine";
+import { ENGINE_VERSION, GameEngine, Enemy, NPC, Position } from "@vscdc/engine";
 import { createTestLevel, isWalkable, Level } from "./level";
+import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
+import { getDialogHandler } from "./dialog";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -21,7 +23,12 @@ export {
 export type { Tile, Level } from "./level";
 
 // Re-export entity types from engine
-export type { Enemy, Position } from "@vscdc/engine";
+export type { Enemy, NPC, Position } from "@vscdc/engine";
+
+// Re-export NPC and dialog types
+export { createSage, initializeNPCDialogs } from "./npcs";
+export { getDialogHandler } from "./dialog";
+export type { DialogTree, DialogNode, DialogOption, DialogHandler } from "./dialog";
 
 /** Verify engine dependency is working */
 export function getEngineVersion(): string {
@@ -43,11 +50,13 @@ export interface ActionResult {
   /** Whether any action occurred */
   success: boolean;
   /** Type of action that occurred */
-  actionType: "move" | "attack" | "blocked";
+  actionType: "move" | "attack" | "blocked" | "interact";
   /** If an attack occurred, the target entity */
   attackTarget?: Enemy;
   /** If an attack occurred, was the target destroyed */
   targetDestroyed?: boolean;
+  /** If an interaction occurred, the NPC that was interacted with */
+  interactTarget?: NPC;
 }
 
 /**
@@ -64,6 +73,10 @@ export interface GameSession {
   getEntities: () => Enemy[];
   /** Get entity at a specific position */
   getEntityAt: (position: Position) => Enemy | undefined;
+  /** Get all NPCs in the game */
+  getNPCs: () => NPC[];
+  /** Get NPC at a specific position */
+  getNPCAt: (position: Position) => NPC | undefined;
 }
 
 // ============================================
@@ -104,6 +117,10 @@ export function createTargetDummy(position: Position): Enemy {
 export function createGame(): GameSession {
   // Reset entity ID counter for consistent IDs in tests
   entityIdCounter = 0;
+  resetNPCIdCounter();
+
+  // Initialize dialog handlers
+  initializeNPCDialogs();
 
   // Create engine with dev tools disabled for production
   const engine = new GameEngine({ enableDevTools: false });
@@ -116,8 +133,14 @@ export function createGame(): GameSession {
   const targetDummy = createTargetDummy({ x: 2, y: 2 });
   engine.addEntity(targetDummy);
 
+  // Add the Sage NPC to the level at position (1, 2)
+  // This position avoids the target dummy at (2,2) and movement test paths
+  const sage = createSage({ x: 1, y: 2 });
+  engine.addNPC(sage);
+
   /**
    * Attempts to move the player by the given offset.
+   * If an NPC is at the target position, interacts instead.
    * If an enemy is at the target position, attacks instead.
    * Returns the result of the action.
    */
@@ -126,6 +149,18 @@ export function createGame(): GameSession {
     const newX = pos.x + dx;
     const newY = pos.y + dy;
     const targetPosition = { x: newX, y: newY };
+
+    // Check if there's an NPC at the target position
+    const npcAtTarget = engine.getNPCAt(targetPosition);
+    if (npcAtTarget) {
+      // Interact with the NPC instead of moving
+      // The NPC interaction is handled by the UI layer, not here
+      return {
+        success: true,
+        actionType: "interact",
+        interactTarget: npcAtTarget,
+      };
+    }
 
     // Check if there's an enemy at the target position
     const entityAtTarget = engine.getEntityAt(targetPosition);
@@ -140,7 +175,7 @@ export function createGame(): GameSession {
       };
     }
 
-    // No enemy, try to move
+    // No enemy or NPC, try to move
     if (isWalkable(level, newX, newY)) {
       engine.movePlayerBy(dx, dy);
       return {
@@ -180,6 +215,20 @@ export function createGame(): GameSession {
     return engine.getEntityAt(position);
   }
 
+  /**
+   * Gets all NPCs in the game
+   */
+  function getNPCs(): NPC[] {
+    return engine.getNPCs();
+  }
+
+  /**
+   * Gets an NPC at a specific position
+   */
+  function getNPCAt(position: Position): NPC | undefined {
+    return engine.getNPCAt(position);
+  }
+
   return {
     engine,
     level,
@@ -187,5 +236,7 @@ export function createGame(): GameSession {
     getPlayerStats,
     getEntities,
     getEntityAt,
+    getNPCs,
+    getNPCAt,
   };
 }

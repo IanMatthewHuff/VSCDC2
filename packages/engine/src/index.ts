@@ -20,6 +20,7 @@ export type {
   Entity,
   CombatEntity,
   Enemy,
+  NPC,
   EntityState,
 } from "./types";
 export type { CreateStoreOptions } from "./store";
@@ -31,10 +32,11 @@ export type {
   StateChangedEvent,
   AttackEvent,
   EntityDestroyedEvent,
+  NPCInteractionEvent,
   AnyGameEvent,
 } from "./events";
 
 // Export action creators for advanced usage
 export { movePlayer, movePlayerBy } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
-export { addEntity, damageEntity, removeEntity, clearEntities } from "./entitySlice";
+export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
