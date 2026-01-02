@@ -4,7 +4,7 @@
  */
 
 import * as vscode from "vscode";
-import { GameSession, createGame } from "@vscdc/game";
+import { GameSession, createGame, getTileAt } from "@vscdc/game";
 import {
   GameEventType,
   AttackEvent,
@@ -13,6 +13,7 @@ import {
 } from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
 import { PlayerTreeProvider } from "./playerTreeProvider";
+import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 
 /**
  * Context key that indicates when the game is active
@@ -26,6 +27,7 @@ export class GameController {
   private gameSession: GameSession | null = null;
   private documentProvider: GameDocumentProvider;
   private playerTreeProvider: PlayerTreeProvider;
+  private cursorLocationTreeProvider: CursorLocationTreeProvider;
   private combatOutputChannel: vscode.OutputChannel;
   private gameEditor: vscode.TextEditor | null = null;
   private eventUnsubscribers: Array<() => void> = [];
@@ -34,10 +36,12 @@ export class GameController {
     private context: vscode.ExtensionContext,
     documentProvider: GameDocumentProvider,
     playerTreeProvider: PlayerTreeProvider,
+    cursorLocationTreeProvider: CursorLocationTreeProvider,
     combatOutputChannel: vscode.OutputChannel
   ) {
     this.documentProvider = documentProvider;
     this.playerTreeProvider = playerTreeProvider;
+    this.cursorLocationTreeProvider = cursorLocationTreeProvider;
     this.combatOutputChannel = combatOutputChannel;
   }
 
@@ -49,6 +53,9 @@ export class GameController {
     this.gameSession = createGame();
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
+    // Update cursor location to initial position
+    this.updateCursorLocation();
 
     // Subscribe to combat events
     this.subscribeToEvents();
@@ -110,6 +117,30 @@ export class GameController {
   }
 
   /**
+   * Update the cursor location tree view with current player position info
+   */
+  private updateCursorLocation(): void {
+    if (!this.gameSession) return;
+
+    const position = this.gameSession.engine.getPlayerPosition();
+    const tile = getTileAt(this.gameSession.level, position.x, position.y);
+
+    // If tile is undefined (shouldn't happen), bail out
+    if (!tile) return;
+
+    // Get all entities at the player's position
+    const entitiesAtPosition = this.gameSession
+      .getEntities()
+      .filter((e) => e.position.x === position.x && e.position.y === position.y);
+
+    this.cursorLocationTreeProvider.setLocationInfo({
+      position,
+      tile,
+      entities: entitiesAtPosition,
+    });
+  }
+
+  /**
    * Stop the current game session
    */
   stopGame(): void {
@@ -117,6 +148,7 @@ export class GameController {
     this.gameSession = null;
     this.gameEditor = null;
     this.playerTreeProvider.setPlayerStats(null);
+    this.cursorLocationTreeProvider.setLocationInfo(null);
     vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, false);
   }
 
@@ -158,6 +190,9 @@ export class GameController {
 
     // Update player stats after any action
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
+    // Update cursor location after movement
+    this.updateCursorLocation();
 
     if (!result.success && result.actionType === "blocked") {
       this.showBlockedMessage();

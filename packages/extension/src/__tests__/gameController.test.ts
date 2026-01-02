@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameController, GAME_ACTIVE_CONTEXT } from "../gameController";
 import { GameDocumentProvider } from "../gameDocumentProvider";
 import { PlayerTreeProvider } from "../playerTreeProvider";
+import { CursorLocationTreeProvider } from "../cursorLocationTreeProvider";
 
 // Mock vscode module - factory must not reference external variables
 vi.mock("vscode", () => {
@@ -73,6 +74,7 @@ describe("GameController", () => {
   let mockContext: vscode.ExtensionContext;
   let documentProvider: GameDocumentProvider;
   let playerTreeProvider: PlayerTreeProvider;
+  let cursorLocationTreeProvider: CursorLocationTreeProvider;
   let mockOutputChannel: vscode.OutputChannel;
 
   beforeEach(() => {
@@ -85,11 +87,13 @@ describe("GameController", () => {
 
     documentProvider = new GameDocumentProvider();
     playerTreeProvider = new PlayerTreeProvider();
+    cursorLocationTreeProvider = new CursorLocationTreeProvider();
     mockOutputChannel = createMockOutputChannel();
     controller = new GameController(
       mockContext,
       documentProvider,
       playerTreeProvider,
+      cursorLocationTreeProvider,
       mockOutputChannel
     );
   });

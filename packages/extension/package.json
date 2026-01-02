@@ -97,6 +97,11 @@
           "id": "vscdc.playerView",
           "name": "Player",
           "when": "vscdc.gameActive"
+        },
+        {
+          "id": "vscdc.cursorLocationView",
+          "name": "Current Location",
+          "when": "vscdc.gameActive"
         }
       ]
     }
