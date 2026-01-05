@@ -22,7 +22,11 @@ const sageDialogTree: DialogTree = {
   nodes: {
     greeting: {
       id: "greeting",
-      text: "Greetings, adventurer. I am the Sage, keeper of ancient knowledge. What brings you to this dungeon?",
+      text: [
+        "Greetings, adventurer.",
+        "I am the Sage, keeper of ancient knowledge.",
+        "What brings you to this dungeon?",
+      ],
       options: [
         { text: "I seek treasure and glory.", nextNodeId: "treasure" },
         { text: "I'm just exploring.", nextNodeId: "exploring" },
@@ -32,16 +36,24 @@ const sageDialogTree: DialogTree = {
     },
     treasure: {
       id: "treasure",
-      text: "Ah, the eternal pursuit of wealth and fame. Be warned, many before you have sought the same, and few have returned.",
+      text: [
+        "Ah, the eternal pursuit of wealth and fame.",
+        "Be warned, many have sought the same.",
+        "Few have returned.",
+      ],
       options: [
         { text: "I'm not afraid.", nextNodeId: "not_afraid" },
-        { text: "Tell me more about the dangers.", nextNodeId: "dangers" },
-        { text: "On second thought, maybe I'll leave.", nextNodeId: null },
+        { text: "Tell me about the dangers.", nextNodeId: "dangers" },
+        { text: "Maybe I'll leave.", nextNodeId: null },
       ],
     },
     exploring: {
       id: "exploring",
-      text: "A curious mind is a valuable asset. This dungeon holds many secrets for those patient enough to uncover them.",
+      text: [
+        "A curious mind is a valuable asset.",
+        "This dungeon holds many secrets.",
+        "Patience is required to uncover them.",
+      ],
       options: [
         { text: "What kind of secrets?", nextNodeId: "secrets" },
         { text: "Thank you for the wisdom.", nextNodeId: null },
@@ -49,7 +61,10 @@ const sageDialogTree: DialogTree = {
     },
     who: {
       id: "who",
-      text: "I am one who has studied these halls for longer than you can imagine. I offer guidance to those who seek it.",
+      text: [
+        "I have studied these halls for ages.",
+        "I offer guidance to those who seek it.",
+      ],
       options: [
         { text: "Why do you stay here?", nextNodeId: "stay" },
         { text: "Can you help me?", nextNodeId: "help" },
@@ -58,12 +73,20 @@ const sageDialogTree: DialogTree = {
     },
     not_afraid: {
       id: "not_afraid",
-      text: "Bravery is admirable, but recklessness is folly. Remember that distinction.",
+      text: [
+        "Bravery is admirable.",
+        "But recklessness is folly.",
+        "Remember that distinction.",
+      ],
       options: [{ text: "I will. Thank you.", nextNodeId: null }],
     },
     dangers: {
       id: "dangers",
-      text: "The creatures here grow stronger as you delve deeper. Some are driven by hunger, others by malice. All are dangerous.",
+      text: [
+        "The creatures grow stronger as you delve deeper.",
+        "Some are driven by hunger, others by malice.",
+        "All are dangerous.",
+      ],
       options: [
         { text: "How do I defeat them?", nextNodeId: "defeat" },
         { text: "I understand.", nextNodeId: null },
@@ -71,22 +94,37 @@ const sageDialogTree: DialogTree = {
     },
     secrets: {
       id: "secrets",
-      text: "Ancient artifacts, forgotten lore, and pathways to realms beyond. But all require courage to discover.",
+      text: [
+        "Ancient artifacts. Forgotten lore.",
+        "Pathways to realms beyond.",
+        "All require courage to discover.",
+      ],
       options: [{ text: "Fascinating. Thank you.", nextNodeId: null }],
     },
     stay: {
       id: "stay",
-      text: "I have my reasons, as all do. Some are bound by duty, others by choice. Mine is a bit of both.",
+      text: [
+        "I have my reasons, as all do.",
+        "Some are bound by duty, others by choice.",
+        "Mine is a bit of both.",
+      ],
       options: [{ text: "I understand.", nextNodeId: null }],
     },
     help: {
       id: "help",
-      text: "I offer what I can: knowledge, warnings, and the occasional word of encouragement. Beyond that, your fate is your own.",
+      text: [
+        "I offer knowledge, warnings, and encouragement.",
+        "Beyond that, your fate is your own.",
+      ],
       options: [{ text: "That's enough. Thank you.", nextNodeId: null }],
     },
     defeat: {
       id: "defeat",
-      text: "Study your foes, learn their patterns, and strike when they're vulnerable. Patience and observation are your greatest weapons.",
+      text: [
+        "Study your foes. Learn their patterns.",
+        "Strike when they're vulnerable.",
+        "Patience is your greatest weapon.",
+      ],
       options: [{ text: "Wise words. Thank you.", nextNodeId: null }],
     },
   },

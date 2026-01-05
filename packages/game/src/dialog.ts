@@ -15,13 +15,23 @@ export interface DialogOption {
 }
 
 /**
+ * Maximum characters per line for dialog text (~65 chars)
+ * This ensures text fits in the VS Code Quick Pick without truncation
+ */
+export const MAX_LINE_LENGTH = 65;
+
+/**
  * A single node in a dialog tree
  */
 export interface DialogNode {
   /** Unique ID for this dialog node */
   id: string;
-  /** The text the NPC says */
-  text: string;
+  /** 
+   * The text the NPC says. Can be a single string or array of strings.
+   * Each line should be MAX_LINE_LENGTH chars or shorter.
+   * NPCs can have up to 3 lines per dialog node.
+   */
+  text: string | string[];
   /** Available response options for the player */
   options: DialogOption[];
 }

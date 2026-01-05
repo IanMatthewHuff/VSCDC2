@@ -135,7 +135,11 @@ describe("NPC system", () => {
       const greetingNode = dialogTree?.nodes["greeting"];
       
       expect(greetingNode).toBeDefined();
-      expect(greetingNode?.text).toContain("Greetings");
+      // Text can be a string or array of strings
+      const textLines = Array.isArray(greetingNode?.text) 
+        ? greetingNode.text 
+        : [greetingNode?.text];
+      expect(textLines.some(line => line?.includes("Greetings"))).toBe(true);
       expect(greetingNode?.options.length).toBeGreaterThan(0);
     });
 

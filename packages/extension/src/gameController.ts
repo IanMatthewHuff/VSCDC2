@@ -430,7 +430,7 @@ export class GameController {
 
   /**
    * Display a single dialog node and return the player's choice
-   * Shows NPC text at the top, then a separator, then player choices
+   * Shows NPC text lines at the top, then a separator, then player choices
    * 
    * @param npcName Name of the NPC for the title
    * @param node The dialog node to display
@@ -441,7 +441,7 @@ export class GameController {
     node: DialogNode
   ): Promise<{ text: string; nextNodeId: string | null } | null> {
     // Build quick pick items:
-    // 1. NPC text as a regular item (clicking it re-shows the dialog)
+    // 1. NPC text lines as regular items (clicking re-shows the dialog)
     // 2. Separator to divide NPC text from choices
     // 3. Player choice options
     interface DialogQuickPickItem extends vscode.QuickPickItem {
@@ -450,13 +450,16 @@ export class GameController {
       optionText?: string;
     }
 
+    // Normalize text to array (supports both string and string[])
+    const textLines = Array.isArray(node.text) ? node.text : [node.text];
+
     const items: DialogQuickPickItem[] = [
-      // NPC dialog text as a non-actionable item
+      // NPC dialog text lines as non-actionable items
       // If clicked, we'll detect it and re-show the same node
-      { 
-        label: `💬 ${node.text}`,
+      ...textLines.map((line) => ({
+        label: `💬 ${line}`,
         isNpcText: true,
-      },
+      })),
       // Separator between NPC text and player choices
       { 
         label: "Your response",
