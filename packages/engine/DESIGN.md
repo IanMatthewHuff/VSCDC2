@@ -37,6 +37,9 @@ The Redux store is organized into slices:
   entities: {
     entities: Record<string, Enemy>,
     npcs: Record<string, NPC>
+  },
+  environments: {
+    environments: Record<string, Environment>  // Keyed by "x,y"
   }
 }
 ```
@@ -97,6 +100,13 @@ The engine exposes a clean API for the UI layer via the `GameEngine` class:
 - `getNPCById(id)` — Get NPC by ID
 - `removeNPC(id)` — Remove an NPC
 
+**Environment Management**:
+- `addEnvironment(environment)` — Add an environment to the game at a specific position
+- `getEnvironments()` — Get all environments
+- `getEnvironmentAt(position)` — Get environment at position
+- `removeEnvironment(position)` — Remove environment from position
+- `applyEnvironmentDamage(type, damage)` — Apply environment damage to player
+
 Future additions:
 - `submitAction(action)` — Submit generic actions
 - `getVisibleMap()` — Query visible map state
@@ -118,10 +128,13 @@ Future additions:
 - ✓ Player slice with movement actions and health tracking
 - ✓ Game slice with turn management
 - ✓ Entity slice with enemy and NPC management
+- ✓ Environment slice with environment management
 - ✓ Event middleware for emitting game events
-- ✓ GameEngine API wrapper with entity and NPC methods
+- ✓ GameEngine API wrapper with entity, NPC, and environment methods
 - ✓ Combat system with attack and damage mechanics
+- ✓ Environment damage system
 - ✓ NPC interaction event types
+- ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
 - ✓ Comprehensive test suite for core functionality
 
 ### Planned
@@ -171,6 +184,8 @@ Custom middleware that emits game events for UI consumption:
 - `ATTACK`: Emitted when an attack occurs (includes damage details)
 - `ENTITY_DESTROYED`: Emitted when an entity reaches 0 HP
 - `NPC_INTERACTION`: Emitted when player interacts with an NPC
+- `ENVIRONMENT_ENTERED`: Emitted when player enters an environment
+- `ENVIRONMENT_DAMAGE`: Emitted when an environment deals damage to the player
 
 **Event Flow**:
 1. Action dispatched to Redux store
@@ -185,6 +200,41 @@ engine.onEvent(GameEventType.ATTACK, (event) => {
   console.log(`${event.attackerName} attacked ${event.targetName}`);
 });
 ```
+
+### Environment System
+**Status: Implemented**
+
+Manages environmental effects that exist at specific positions in the game world:
+
+**Environment Slice** (`environmentSlice.ts`):
+- Manages a collection of environments indexed by position (x,y)
+- Actions: `addEnvironment`, `removeEnvironment`, `clearEnvironments`
+- Selectors: `selectEnvironmentAt`, `selectAllEnvironments`
+- Position-based storage for efficient spatial lookups
+
+**Environment Structure**:
+```typescript
+interface Environment {
+  id: string;              // Unique identifier
+  type: string;            // Environment type (e.g., "lava")
+  position: Position;      // Where the environment exists
+  displayChar: string;     // Character for rendering
+  color: string;           // Color for visual representation
+}
+```
+
+**Environment Management Flow**:
+1. Game package defines environment types and effects
+2. Environments are added to engine via `addEnvironment()`
+3. When player moves, middleware checks for environments at new position
+4. If environment found, `ENVIRONMENT_ENTERED` event is emitted
+5. Game package applies environment effects via `applyEnvironmentDamage()`
+6. `ENVIRONMENT_DAMAGE` event is emitted for UI logging
+
+**Event Integration**:
+- Middleware automatically detects when player enters environment
+- Game layer is responsible for interpreting and applying effects
+- UI layer logs environment interactions to combat log
 
 ### Map System
 *Placeholder*
