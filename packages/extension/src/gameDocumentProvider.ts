@@ -60,6 +60,7 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     const playerState = engine.getState().player;
     const entities = session.getEntities();
     const npcs = session.getNPCs();
+    const environments = session.getEnvironments();
 
     // Create a map of positions to entities for quick lookup
     const entityPositions = new Map<string, { displayChar: string }>();
@@ -72,6 +73,13 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     for (const npc of npcs) {
       const key = `${npc.position.x},${npc.position.y}`;
       entityPositions.set(key, npc);
+    }
+
+    // Create a map of positions to environments
+    const environmentPositions = new Map<string, { displayChar: string }>();
+    for (const env of environments) {
+      const key = `${env.position.x},${env.position.y}`;
+      environmentPositions.set(key, env);
     }
 
     const lines: string[] = [];
@@ -94,8 +102,14 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
           if (entity) {
             row += entity.displayChar;
           } else {
-            // Show the tile
-            row += level.tiles[y][x].displayChar;
+            // Check for environment at this position
+            const environment = environmentPositions.get(`${x},${y}`);
+            if (environment) {
+              row += environment.displayChar;
+            } else {
+              // Show the tile
+              row += level.tiles[y][x].displayChar;
+            }
           }
         }
       }

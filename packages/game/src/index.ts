@@ -9,7 +9,7 @@ import { ENGINE_VERSION, GameEngine, Enemy, NPC, Position, Environment } from "@
 import { createTestLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
-import { initializeEnvironmentEffects, createLavaEnvironment } from "./environments";
+import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -201,6 +201,16 @@ export function createGame(): GameSession {
     // No enemy or NPC, try to move
     if (isWalkable(level, newX, newY)) {
       engine.movePlayerBy(dx, dy);
+
+      // Check if player entered an environment and apply its effects
+      const environment = engine.getEnvironmentAt(targetPosition);
+      if (environment) {
+        const effect = getEnvironmentEffect(environment.type);
+        if (effect && effect.triggersOnEntry && effect.damage) {
+          engine.applyEnvironmentDamage(environment.type, effect.damage);
+        }
+      }
+
       return {
         success: true,
         actionType: "move",

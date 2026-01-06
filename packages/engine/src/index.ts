@@ -41,7 +41,7 @@ export type {
 } from "./events";
 
 // Export action creators for advanced usage
-export { movePlayer, movePlayerBy } from "./playerSlice";
+export { movePlayer, movePlayerBy, damagePlayer } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";

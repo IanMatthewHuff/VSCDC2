@@ -34,8 +34,15 @@ export const playerSlice = createSlice({
       state.position.x += action.payload.dx;
       state.position.y += action.payload.dy;
     },
+    /**
+     * Damage the player, reducing current health
+     * Health will not go below 0
+     */
+    damagePlayer: (state, action: PayloadAction<{ amount: number }>) => {
+      state.health.current = Math.max(0, state.health.current - action.payload.amount);
+    },
   },
 });
 
-export const { movePlayer, movePlayerBy } = playerSlice.actions;
+export const { movePlayer, movePlayerBy, damagePlayer } = playerSlice.actions;
 export default playerSlice.reducer;

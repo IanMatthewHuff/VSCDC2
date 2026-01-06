@@ -9,6 +9,7 @@ import {
   createGame,
   getTileAt,
   getDialogHandler,
+  getEnvironmentEffect,
   DialogTree,
   DialogNode,
   NPC,
@@ -17,6 +18,8 @@ import {
   GameEventType,
   AttackEvent,
   EntityDestroyedEvent,
+  EnvironmentEnteredEvent,
+  EnvironmentDamageEvent,
   AnyGameEvent,
 } from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
@@ -162,6 +165,28 @@ export class GameController {
       }
     );
     this.eventUnsubscribers.push(unsubDestroyed);
+
+    // Subscribe to environment entered events
+    const unsubEnvEntered = engine.onEvent(
+      GameEventType.ENVIRONMENT_ENTERED,
+      (event: AnyGameEvent) => {
+        const envEvent = event as EnvironmentEnteredEvent;
+        const message = `${envEvent.characterName} entered ${envEvent.environmentType}`;
+        this.logCombat(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubEnvEntered);
+
+    // Subscribe to environment damage events
+    const unsubEnvDamage = engine.onEvent(
+      GameEventType.ENVIRONMENT_DAMAGE,
+      (event: AnyGameEvent) => {
+        const dmgEvent = event as EnvironmentDamageEvent;
+        const message = `${dmgEvent.characterName} took ${dmgEvent.damage} damage from ${dmgEvent.environmentType}! HP: ${dmgEvent.remainingHp}/${dmgEvent.maxHp}`;
+        this.logCombat(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubEnvDamage);
   }
 
   /**
@@ -275,10 +300,14 @@ export class GameController {
       });
     }
 
+    // Get environment at this position
+    const environment = this.gameSession.getEnvironmentAt({ x, y });
+
     this.cursorLocationTreeProvider.setLocationInfo({
       position: { x, y },
       tile,
       entities: entitiesAtPosition,
+      environment,
     });
   }
 
