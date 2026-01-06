@@ -5,10 +5,11 @@
  * rules, and content. It depends on @vscdc/engine.
  */
 
-import { ENGINE_VERSION, GameEngine, Enemy, NPC, Position } from "@vscdc/engine";
+import { ENGINE_VERSION, GameEngine, Enemy, NPC, Position, Environment } from "@vscdc/engine";
 import { createTestLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
+import { initializeEnvironmentEffects, createLavaEnvironment } from "./environments";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -23,12 +24,21 @@ export {
 export type { Tile, Level } from "./level";
 
 // Re-export entity types from engine
-export type { Enemy, NPC, Position } from "@vscdc/engine";
+export type { Enemy, NPC, Position, Environment } from "@vscdc/engine";
 
 // Re-export NPC and dialog types
 export { createSage, initializeNPCDialogs } from "./npcs";
 export { getDialogHandler } from "./dialog";
 export type { DialogTree, DialogNode, DialogOption, DialogHandler } from "./dialog";
+
+// Re-export environment types and utilities
+export {
+  EnvironmentType,
+  createLavaEnvironment,
+  initializeEnvironmentEffects,
+  getEnvironmentEffect,
+} from "./environments";
+export type { EnvironmentEffect } from "./environments";
 
 /** Verify engine dependency is working */
 export function getEngineVersion(): string {
@@ -77,6 +87,10 @@ export interface GameSession {
   getNPCs: () => NPC[];
   /** Get NPC at a specific position */
   getNPCAt: (position: Position) => NPC | undefined;
+  /** Get all environments in the game */
+  getEnvironments: () => Environment[];
+  /** Get environment at a specific position */
+  getEnvironmentAt: (position: Position) => Environment | undefined;
 }
 
 // ============================================
@@ -119,6 +133,9 @@ export function createGame(): GameSession {
   entityIdCounter = 0;
   resetNPCIdCounter();
 
+  // Initialize environment effects
+  initializeEnvironmentEffects();
+
   // Initialize dialog handlers
   initializeNPCDialogs();
 
@@ -137,6 +154,12 @@ export function createGame(): GameSession {
   // This position avoids the target dummy at (2,2) and movement test paths
   const sage = createSage({ x: 1, y: 2 });
   engine.addNPC(sage);
+
+  // Add lava environments at positions (4, 1) and (4, 2)
+  const lava1 = createLavaEnvironment({ x: 4, y: 1 });
+  const lava2 = createLavaEnvironment({ x: 4, y: 2 });
+  engine.addEnvironment(lava1);
+  engine.addEnvironment(lava2);
 
   /**
    * Attempts to move the player by the given offset.
@@ -229,6 +252,20 @@ export function createGame(): GameSession {
     return engine.getNPCAt(position);
   }
 
+  /**
+   * Gets all environments in the game
+   */
+  function getEnvironments(): Environment[] {
+    return engine.getEnvironments();
+  }
+
+  /**
+   * Gets an environment at a specific position
+   */
+  function getEnvironmentAt(position: Position): Environment | undefined {
+    return engine.getEnvironmentAt(position);
+  }
+
   return {
     engine,
     level,
@@ -238,5 +275,7 @@ export function createGame(): GameSession {
     getEntityAt,
     getNPCs,
     getNPCAt,
+    getEnvironments,
+    getEnvironmentAt,
   };
 }
