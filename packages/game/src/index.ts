@@ -206,7 +206,7 @@ export function createGame(): GameSession {
       const environment = engine.getEnvironmentAt(targetPosition);
       if (environment) {
         const effect = getEnvironmentEffect(environment.type);
-        if (effect && effect.triggersOnEntry && effect.damage) {
+        if (effect && effect.triggersOnEntry && typeof effect.damage === "number") {
           engine.applyEnvironmentDamage(environment.type, effect.damage);
         }
       }

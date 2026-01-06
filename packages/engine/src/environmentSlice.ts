@@ -42,6 +42,7 @@ const environmentSlice = createSlice({
   reducers: {
     /**
      * Add a new environment to the game at a specific position
+     * Note: If an environment already exists at this position, it will be replaced
      */
     addEnvironment: (state, action: PayloadAction<AddEnvironmentPayload>) => {
       const { environment } = action.payload;
