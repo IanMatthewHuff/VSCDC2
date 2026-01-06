@@ -4,7 +4,7 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState, Enemy, NPC, Position } from "./types";
+import { GameState, Enemy, NPC, Position, Environment } from "./types";
 import { movePlayer, movePlayerBy } from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
 import {
@@ -20,6 +20,12 @@ import {
   selectAllNPCs,
   selectNPCById,
 } from "./entitySlice";
+import {
+  addEnvironment,
+  removeEnvironment,
+  selectEnvironmentAt,
+  selectAllEnvironments,
+} from "./environmentSlice";
 import { GameEventType, AnyGameEvent } from "./events";
 import { EventHandler, queueAttackEvent } from "./eventMiddleware";
 
@@ -263,5 +269,37 @@ export class GameEngine {
       targetDestroyed,
       target: updatedTarget,
     };
+  }
+
+  // ============================================
+  // Environment Management
+  // ============================================
+
+  /**
+   * Add an environment to the game at a specific position
+   */
+  public addEnvironment(environment: Environment): void {
+    this.store.dispatch(addEnvironment({ environment }));
+  }
+
+  /**
+   * Get all environments in the game
+   */
+  public getEnvironments(): Environment[] {
+    return selectAllEnvironments(this.store.getState().environments);
+  }
+
+  /**
+   * Get an environment at a specific position
+   */
+  public getEnvironmentAt(position: Position): Environment | undefined {
+    return selectEnvironmentAt(this.store.getState().environments, position);
+  }
+
+  /**
+   * Remove an environment from a specific position
+   */
+  public removeEnvironment(position: Position): void {
+    this.store.dispatch(removeEnvironment({ position }));
   }
 }

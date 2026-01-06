@@ -11,8 +11,11 @@ import {
   StateChangedEvent,
   AttackEvent,
   EntityDestroyedEvent,
+  EnvironmentEnteredEvent,
+  EnvironmentDamageEvent,
   AnyGameEvent,
 } from "./events";
+import { selectEnvironmentAt } from "./environmentSlice";
 
 /**
  * Event handler callback type
@@ -31,15 +34,37 @@ interface PendingAttack {
 }
 
 /**
+ * Pending environment damage event to be emitted after state update
+ */
+interface PendingEnvironmentDamage {
+  characterId: string;
+  characterName: string;
+  environmentType: string;
+  damage: number;
+}
+
+/**
  * Store for pending attack events (filled by action, emitted by middleware)
  */
 let pendingAttacks: PendingAttack[] = [];
+
+/**
+ * Store for pending environment damage events
+ */
+let pendingEnvironmentDamages: PendingEnvironmentDamage[] = [];
 
 /**
  * Queue an attack event to be emitted after the action is processed
  */
 export function queueAttackEvent(attack: PendingAttack): void {
   pendingAttacks.push(attack);
+}
+
+/**
+ * Queue an environment damage event to be emitted after the action is processed
+ */
+export function queueEnvironmentDamageEvent(damage: PendingEnvironmentDamage): void {
+  pendingEnvironmentDamages.push(damage);
 }
 
 /**
@@ -69,6 +94,24 @@ export function createEventMiddleware(
         newPosition: { ...nextState.player.position },
       };
       emitEvent(eventHandlers, event);
+
+      // Check if player entered an environment
+      const environment = selectEnvironmentAt(
+        nextState.environments,
+        nextState.player.position
+      );
+      if (environment) {
+        const envEnteredEvent: EnvironmentEnteredEvent = {
+          type: GameEventType.ENVIRONMENT_ENTERED,
+          timestamp: Date.now(),
+          characterId: nextState.player.id,
+          characterName: nextState.player.name,
+          environmentId: environment.id,
+          environmentType: environment.type,
+          position: { ...nextState.player.position },
+        };
+        emitEvent(eventHandlers, envEnteredEvent);
+      }
     }
 
     // Emit turn advanced event
@@ -98,6 +141,22 @@ export function createEventMiddleware(
       emitEvent(eventHandlers, attackEvent);
     }
     pendingAttacks = [];
+
+    // Emit environment damage events for any pending damage
+    for (const envDamage of pendingEnvironmentDamages) {
+      const damageEvent: EnvironmentDamageEvent = {
+        type: GameEventType.ENVIRONMENT_DAMAGE,
+        timestamp: Date.now(),
+        characterId: envDamage.characterId,
+        characterName: envDamage.characterName,
+        environmentType: envDamage.environmentType,
+        damage: envDamage.damage,
+        remainingHp: nextState.player.health.current,
+        maxHp: nextState.player.health.max,
+      };
+      emitEvent(eventHandlers, damageEvent);
+    }
+    pendingEnvironmentDamages = [];
 
     // Check for destroyed entities (entities that were removed)
     for (const [entityId, entity] of Object.entries(prevEntities)) {

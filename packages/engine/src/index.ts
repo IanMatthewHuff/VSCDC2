@@ -22,6 +22,8 @@ export type {
   Enemy,
   NPC,
   EntityState,
+  Environment,
+  EnvironmentState,
 } from "./types";
 export type { CreateStoreOptions } from "./store";
 export { GameEventType } from "./events";
@@ -33,6 +35,8 @@ export type {
   AttackEvent,
   EntityDestroyedEvent,
   NPCInteractionEvent,
+  EnvironmentEnteredEvent,
+  EnvironmentDamageEvent,
   AnyGameEvent,
 } from "./events";
 
@@ -40,3 +44,4 @@ export type {
 export { movePlayer, movePlayerBy } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
+export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";

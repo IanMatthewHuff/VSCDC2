@@ -78,6 +78,30 @@ export interface EntityState {
 }
 
 /**
+ * An environment effect that exists at a specific position
+ */
+export interface Environment {
+  /** Unique identifier for this environment instance */
+  id: string;
+  /** Type of environment (e.g., "lava", "water", "poison") */
+  type: string;
+  /** Position where this environment exists */
+  position: Position;
+  /** Display character for rendering */
+  displayChar: string;
+  /** Color for visual representation */
+  color: string;
+}
+
+/**
+ * State for all environments in the game
+ */
+export interface EnvironmentState {
+  /** Map of position keys (x,y) to environment */
+  environments: Record<string, Environment>;
+}
+
+/**
  * Game-specific state (not player)
  */
 export interface Game {
@@ -91,4 +115,5 @@ export interface GameState {
   player: Player;
   game: Game;
   entities: EntityState;
+  environments: EnvironmentState;
 }

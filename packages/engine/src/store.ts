@@ -6,6 +6,7 @@ import { configureStore, Store } from "@reduxjs/toolkit";
 import playerReducer from "./playerSlice";
 import gameReducer from "./gameSlice";
 import entityReducer from "./entitySlice";
+import environmentReducer from "./environmentSlice";
 import { GameState } from "./types";
 import { createEventMiddleware, EventHandler } from "./eventMiddleware";
 import { GameEventType } from "./events";
@@ -45,6 +46,7 @@ export function createGameStore(
       player: playerReducer,
       game: gameReducer,
       entities: entityReducer,
+      environments: environmentReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(createEventMiddleware(eventHandlers)),
