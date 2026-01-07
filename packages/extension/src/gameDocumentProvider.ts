@@ -94,7 +94,8 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
           if (entity) {
             row += entity.displayChar;
           } else {
-            // Show the tile
+            // Show the tile (environments don't have display characters,
+            // they are only shown via UI decorations/highlighting)
             row += level.tiles[y][x].displayChar;
           }
         }

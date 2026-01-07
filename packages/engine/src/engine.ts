@@ -4,8 +4,8 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState, Enemy, NPC, Position } from "./types";
-import { movePlayer, movePlayerBy } from "./playerSlice";
+import { GameState, Enemy, NPC, Position, Environment } from "./types";
+import { movePlayer, movePlayerBy, damagePlayer } from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
 import {
   addEntity,
@@ -20,8 +20,14 @@ import {
   selectAllNPCs,
   selectNPCById,
 } from "./entitySlice";
+import {
+  addEnvironment,
+  removeEnvironment,
+  selectEnvironmentAt,
+  selectAllEnvironments,
+} from "./environmentSlice";
 import { GameEventType, AnyGameEvent } from "./events";
-import { EventHandler, queueAttackEvent } from "./eventMiddleware";
+import { EventHandler, queueAttackEvent, queueEnvironmentDamageEvent } from "./eventMiddleware";
 
 /**
  * Result of an attack action
@@ -263,5 +269,58 @@ export class GameEngine {
       targetDestroyed,
       target: updatedTarget,
     };
+  }
+
+  // ============================================
+  // Environment Management
+  // ============================================
+
+  /**
+   * Add an environment to the game at a specific position
+   */
+  public addEnvironment(environment: Environment): void {
+    this.store.dispatch(addEnvironment({ environment }));
+  }
+
+  /**
+   * Get all environments in the game
+   */
+  public getEnvironments(): Environment[] {
+    return selectAllEnvironments(this.store.getState().environments);
+  }
+
+  /**
+   * Get an environment at a specific position
+   */
+  public getEnvironmentAt(position: Position): Environment | undefined {
+    return selectEnvironmentAt(this.store.getState().environments, position);
+  }
+
+  /**
+   * Remove an environment from a specific position
+   */
+  public removeEnvironment(position: Position): void {
+    this.store.dispatch(removeEnvironment({ position }));
+  }
+
+  /**
+   * Apply environment damage to the player
+   * Used when player enters a damaging environment
+   * @param environmentType The type of environment dealing damage
+   * @param damage The amount of damage to deal
+   */
+  public applyEnvironmentDamage(environmentType: string, damage: number): void {
+    const player = this.store.getState().player;
+
+    // Queue the environment damage event
+    queueEnvironmentDamageEvent({
+      characterId: player.id,
+      characterName: player.name,
+      environmentType,
+      damage,
+    });
+
+    // Apply damage to player
+    this.store.dispatch(damagePlayer({ amount: damage }));
   }
 }

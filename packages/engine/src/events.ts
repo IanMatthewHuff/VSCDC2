@@ -9,6 +9,8 @@ export enum GameEventType {
   ATTACK = "attack",
   ENTITY_DESTROYED = "entity_destroyed",
   NPC_INTERACTION = "npc_interaction",
+  ENVIRONMENT_ENTERED = "environment_entered",
+  ENVIRONMENT_DAMAGE = "environment_damage",
 }
 
 /**
@@ -80,6 +82,31 @@ export interface NPCInteractionEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when a character enters an environment
+ */
+export interface EnvironmentEnteredEvent extends GameEvent {
+  type: GameEventType.ENVIRONMENT_ENTERED;
+  characterId: string;
+  characterName: string;
+  environmentId: string;
+  environmentType: string;
+  position: { x: number; y: number };
+}
+
+/**
+ * Event emitted when an environment deals damage to a character
+ */
+export interface EnvironmentDamageEvent extends GameEvent {
+  type: GameEventType.ENVIRONMENT_DAMAGE;
+  characterId: string;
+  characterName: string;
+  environmentType: string;
+  damage: number;
+  remainingHp: number;
+  maxHp: number;
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -88,4 +115,6 @@ export type AnyGameEvent =
   | StateChangedEvent
   | AttackEvent
   | EntityDestroyedEvent
-  | NPCInteractionEvent;
+  | NPCInteractionEvent
+  | EnvironmentEnteredEvent
+  | EnvironmentDamageEvent;

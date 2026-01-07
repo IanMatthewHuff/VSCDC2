@@ -208,3 +208,79 @@ describe("createTargetDummy", () => {
     expect(dummy1.id).not.toBe(dummy2.id);
   });
 });
+
+describe("environments", () => {
+  describe("getEnvironments", () => {
+    it("returns all environments in the game", () => {
+      const game = createGame();
+      const environments = game.getEnvironments();
+      
+      // Game should have 2 lava environments at (4,1) and (4,2)
+      expect(environments).toHaveLength(2);
+      expect(environments[0].type).toBe("lava");
+      expect(environments[1].type).toBe("lava");
+    });
+  });
+
+  describe("getEnvironmentAt", () => {
+    it("returns environment at the specified position", () => {
+      const game = createGame();
+      const env = game.getEnvironmentAt({ x: 4, y: 1 });
+      
+      expect(env).toBeDefined();
+      expect(env?.type).toBe("lava");
+      expect(env?.color).toBe("orange");
+    });
+
+    it("returns undefined when no environment at position", () => {
+      const game = createGame();
+      const env = game.getEnvironmentAt({ x: 3, y: 3 });
+      
+      expect(env).toBeUndefined();
+    });
+  });
+
+  describe("environment damage", () => {
+    it("deals damage when player moves onto lava", () => {
+      const game = createGame();
+      
+      // Player starts at (3,3) with 10 HP
+      const initialHealth = game.getPlayerStats().health;
+      expect(initialHealth).toEqual({ current: 10, max: 10 });
+
+      // Move right to (4,3) - no lava
+      game.movePlayer(1, 0);
+      expect(game.getPlayerStats().health).toEqual({ current: 10, max: 10 });
+
+      // Move up to (4,2) - lava! Should take 1 damage
+      game.movePlayer(0, -1);
+      expect(game.getPlayerStats().health).toEqual({ current: 9, max: 10 });
+
+      // Move up to (4,1) - lava! Should take 1 more damage
+      game.movePlayer(0, -1);
+      expect(game.getPlayerStats().health).toEqual({ current: 8, max: 10 });
+    });
+
+    it("emits environment events when player enters lava", () => {
+      const game = createGame();
+      const events: string[] = [];
+
+      // Subscribe to environment entered events
+      game.engine.onEvent("environment_entered" as any, (event: any) => {
+        events.push(`entered:${event.environmentType}`);
+      });
+
+      // Subscribe to environment damage events
+      game.engine.onEvent("environment_damage" as any, (event: any) => {
+        events.push(`damage:${event.damage}`);
+      });
+
+      // Move onto lava at (4,2)
+      game.movePlayer(1, 0); // to (4,3)
+      game.movePlayer(0, -1); // to (4,2) - lava
+
+      expect(events).toContain("entered:lava");
+      expect(events).toContain("damage:1");
+    });
+  });
+});

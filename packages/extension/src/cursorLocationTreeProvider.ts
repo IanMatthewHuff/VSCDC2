@@ -3,7 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import { Position } from "@vscdc/engine";
+import { Position, Environment } from "@vscdc/engine";
 import { Tile } from "@vscdc/game";
 
 /**
@@ -21,6 +21,7 @@ export interface LocationInfo {
   position: Position;
   tile: Tile;
   entities: DisplayEntity[];
+  environment?: Environment;
 }
 
 /**
@@ -97,6 +98,18 @@ export class CursorLocationTreeProvider implements vscode.TreeDataProvider<Locat
           new vscode.ThemeIcon("symbol-field")
         )
       );
+
+      // Environment at this location
+      if (this.locationInfo.environment) {
+        items.push(
+          new LocationInfoItem(
+            "Environment",
+            this.locationInfo.environment.type,
+            vscode.TreeItemCollapsibleState.None,
+            new vscode.ThemeIcon("flame")
+          )
+        );
+      }
 
       // Entities at this location
       if (this.locationInfo.entities.length > 0) {

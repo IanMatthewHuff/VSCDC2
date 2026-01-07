@@ -112,6 +112,51 @@ The dialog system enables NPC interactions through branching conversation trees:
   - Multi-branch dialog tree with various conversation paths
   - Topics: treasure hunting, dungeon dangers, secrets, and wisdom
 
+### Environment System
+**Status: Implemented**
+
+The environment system enables tiles to have environmental effects that can affect characters:
+
+**Data Structure**:
+- `Environment`: Defines an environment with type, position, display character, and color
+- `EnvironmentEffect`: Defines what happens when a character interacts with an environment
+- `EnvironmentType`: Enum of available environment types (e.g., "lava")
+
+**Effect Handler Pattern**:
+- Environment effects are registered in a module-level Map
+- `registerEnvironmentEffect(type, effect)` maps types to their effects
+- `getEnvironmentEffect(type)` retrieves the effect for applying it
+
+**Effect Properties**:
+- `damage`: Amount of damage to deal (if any)
+- `triggersOnEntry`: Whether effect applies when entering the environment
+
+**Environment Factories**:
+- `createLavaEnvironment(position)`: Creates a lava environment
+  - Deals 1 damage on entry
+  - Color: "orange" (for UI highlighting/decorations)
+  - No display character (rendered via UI decorations only)
+  - Unique ID generation for tracking
+
+**Initialization**:
+- `initializeEnvironmentEffects()` registers all environment effects
+- Called during game initialization before adding environments
+- Currently registers lava (1 damage on entry)
+
+**Current Environments**:
+- **Lava**: Damaging environment at positions (4,1) and (4,2) in test level
+  - Deals 1 HP damage when player enters
+  - Visual: Orange background highlight (no character displayed)
+  - Triggers environment events for UI logging
+
+**Integration with Game Loop**:
+1. Player attempts to move to a tile
+2. If walkable, player moves
+3. Game checks for environment at new position
+4. If environment exists, gets its effect handler
+5. If effect triggers on entry and has damage, applies it via engine
+6. Engine emits environment events for UI consumption
+
 ### Items
 *TODO: Document item definition format*
 
@@ -120,5 +165,6 @@ Per DESIGN.md, we're starting minimal:
 - A couple of enemy types
 - Simple melee combat
 - One NPC with dialog
+- Environment effects (lava)
 
 Expand only after the foundation is solid.
