@@ -23,7 +23,7 @@ The `@vscdc/game` package defines all game-specific content—entities, items, r
 ## Content Categories
 
 ### Entities
-**Status: Partially Implemented**
+**Status: Implemented**
 
 Entity definitions for enemies and NPCs:
 
@@ -31,7 +31,16 @@ Entity definitions for enemies and NPCs:
 - **Target Dummy**: Training entity at position (2,2)
   - 3 HP, can be attacked and destroyed
   - Display character: "D", color: brown
+  - Stationary (does not move or attack)
   - Used for testing combat mechanics
+
+- **Goblin**: Active enemy that moves and attacks
+  - 3 HP, display character: "G", color: green
+  - Moves greedily toward player using Manhattan distance
+  - Attacks player when adjacent (1 damage per turn)
+  - Avoids damaging environments (e.g., lava)
+  - Added to level when `createGame({ includeEnemies: true })`
+  - Default position: (1, 1) in test level
 
 **NPCs**:
 - **Sage**: Wise advisor NPC at position (1,2)
@@ -41,9 +50,37 @@ Entity definitions for enemies and NPCs:
   - Provides branching dialog interactions
 
 **Entity Factories**:
-- `createTargetDummy(position)`: Creates enemy entity
+- `createTargetDummy(position)`: Creates stationary training dummy
+- `createGoblin(position)`: Creates active goblin enemy
 - `createSage(position)`: Creates NPC entity
 - Each uses unique ID generation for tracking
+
+### Enemy AI System
+**Status: Implemented**
+
+The enemy AI system handles autonomous enemy behavior during combat:
+
+**Movement Algorithm**:
+- **Greedy pathfinding**: Enemies move toward the player by selecting adjacent tiles that minimize Manhattan distance
+- **4-directional movement**: Enemies can move North, South, East, or West
+- **Collision avoidance**: Enemies don't move onto occupied tiles (other enemies, NPCs, or player)
+- **Environment awareness**: Enemies avoid hazardous environments (e.g., lava)
+
+**Combat Behavior**:
+- **Melee attacks**: When adjacent to player (distance = 1), enemy attacks instead of moving
+- **Fixed damage**: Each enemy attack deals 1 HP damage to the player
+- **Attack events**: Combat actions emit events for UI logging
+
+**Turn Processing**:
+- `processEnemyTurn(enemy, engine, level)`: Processes a single enemy's turn
+- `processAllEnemyTurns(engine, level)`: Processes all active enemies in order
+- Called automatically after player actions (move or attack)
+- Stationary enemies (like Target Dummy) are skipped
+
+**Integration**:
+- Enemy turns are processed in `movePlayer()` after successful player actions
+- Only active enemy types participate in AI (checked by `type` field)
+- NPC interactions do not trigger enemy turns
 
 ### Items
 *TODO: Document item definition format*
@@ -52,13 +89,22 @@ Entity definitions for enemies and NPCs:
 *TODO: Document dungeon generation parameters*
 
 ### Combat Rules
-**Status: Basic Implementation**
+**Status: Implemented**
 
-Simple melee combat system:
-- Bump-to-attack: Moving onto an enemy's tile triggers combat
-- Fixed damage per attack (1 HP by default)
-- Entities are removed when health reaches 0
-- Combat events are logged to output channel
+Turn-based combat system with player and enemy actions:
+
+**Player Combat**:
+- **Bump-to-attack**: Moving onto an enemy's tile triggers combat
+- **Fixed damage**: Player deals 1 HP per attack
+- **Entity removal**: Entities are removed when health reaches 0
+- **Combat events**: All combat actions are logged via event system
+
+**Enemy Combat**:
+- **Autonomous behavior**: Enemies act automatically after player actions
+- **Adjacent attacks**: Enemies attack when next to the player (Manhattan distance = 1)
+- **Turn-based**: Each enemy gets one action per player action
+- **AI-driven movement**: Enemies use greedy pathfinding to approach player
+- **Environmental awareness**: Enemies avoid hazardous tiles
 
 **NPC Interaction Rules**:
 - Moving onto an NPC tile triggers dialog interaction instead of combat
