@@ -155,11 +155,10 @@ export function createGame(): GameSession {
   const sage = createSage({ x: 1, y: 2 });
   engine.addNPC(sage);
 
-  // Add lava environments at positions (4, 1) and (4, 2)
-  const lava1 = createLavaEnvironment({ x: 4, y: 1 });
-  const lava2 = createLavaEnvironment({ x: 4, y: 2 });
-  engine.addEnvironment(lava1);
-  engine.addEnvironment(lava2);
+  // Add lava environment at position (4, 1)
+  // This avoids the Sage (1,2), Target Dummy (2,2), and Player Start (3,3)
+  const lava = createLavaEnvironment({ x: 4, y: 1 });
+  engine.addEnvironment(lava);
 
   /**
    * Attempts to move the player by the given offset.

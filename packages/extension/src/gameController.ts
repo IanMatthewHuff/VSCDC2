@@ -13,6 +13,7 @@ import {
   DialogTree,
   DialogNode,
   NPC,
+  EnvironmentType,
 } from "@vscdc/game";
 import {
   GameEventType,
@@ -62,6 +63,9 @@ export class GameController {
   private eventUnsubscribers: Array<() => void> = [];
   private disposables: vscode.Disposable[] = [];
 
+  /** Decoration type for lava environments (orange background) */
+  private lavaDecorationType: vscode.TextEditorDecorationType;
+
   constructor(
     private context: vscode.ExtensionContext,
     documentProvider: GameDocumentProvider,
@@ -73,6 +77,11 @@ export class GameController {
     this.playerTreeProvider = playerTreeProvider;
     this.cursorLocationTreeProvider = cursorLocationTreeProvider;
     this.outputChannels = outputChannels;
+
+    // Create decoration types for environments
+    this.lavaDecorationType = vscode.window.createTextEditorDecorationType({
+      backgroundColor: "rgba(255, 100, 0, 0.5)",
+    });
 
     // Subscribe to cursor/selection changes to update cursor location view
     this.disposables.push(
@@ -116,6 +125,19 @@ export class GameController {
       preview: false,
       preserveFocus: false,
     });
+
+    // Apply initial environment decorations
+    this.updateEnvironmentDecorations();
+
+    // Subscribe to document changes to update decorations
+    // This ensures decorations are applied AFTER the document content has been updated
+    this.disposables.push(
+      vscode.workspace.onDidChangeTextDocument((event) => {
+        if (event.document.uri.toString() === GAME_DOCUMENT_URI.toString()) {
+          this.updateEnvironmentDecorations();
+        }
+      })
+    );
 
     // Set context to indicate game is active
     vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, true);
@@ -249,6 +271,17 @@ export class GameController {
   }
 
   /**
+   * Convert game world position (x, y) to VS Code editor range
+   * Returns a range covering a single character at the specified position
+   */
+  private convertGamePositionToEditorRange(x: number, y: number): vscode.Range {
+    const line = y + MAP_HEADER_LINES;
+    const startChar = x;
+    const endChar = x + 1;
+    return new vscode.Range(line, startChar, line, endChar);
+  }
+
+  /**
    * Update the cursor location tree view with info at the specified game position
    */
   private updateCursorLocationAtPosition(x: number, y: number): void {
@@ -326,6 +359,27 @@ export class GameController {
     } else {
       this.cursorLocationTreeProvider.setLocationInfo(null);
     }
+  }
+
+  /**
+   * Update environment decorations in the game editor
+   * Applies visual highlighting to environment tiles (e.g., orange background for lava)
+   */
+  private updateEnvironmentDecorations(): void {
+    if (!this.gameEditor || !this.gameSession) return;
+
+    const environments = this.gameSession.getEnvironments();
+    const lavaRanges: vscode.Range[] = [];
+
+    for (const env of environments) {
+      if (env.type === EnvironmentType.Lava) {
+        const range = this.convertGamePositionToEditorRange(env.position.x, env.position.y);
+        lavaRanges.push(range);
+      }
+    }
+
+    // Apply decorations to the editor
+    this.gameEditor.setDecorations(this.lavaDecorationType, lavaRanges);
   }
 
   /**
@@ -540,6 +594,7 @@ export class GameController {
 
   dispose(): void {
     this.stopGame();
+    this.lavaDecorationType.dispose();
     for (const disposable of this.disposables) {
       disposable.dispose();
     }

@@ -215,10 +215,9 @@ describe("environments", () => {
       const game = createGame();
       const environments = game.getEnvironments();
       
-      // Game should have 2 lava environments at (4,1) and (4,2)
-      expect(environments).toHaveLength(2);
+      // Game should have 1 lava environment at (4,1)
+      expect(environments).toHaveLength(1);
       expect(environments[0].type).toBe("lava");
-      expect(environments[1].type).toBe("lava");
     });
   });
 
@@ -252,13 +251,13 @@ describe("environments", () => {
       game.movePlayer(1, 0);
       expect(game.getPlayerStats().health).toEqual({ current: 10, max: 10 });
 
-      // Move up to (4,2) - lava! Should take 1 damage
+      // Move up to (4,2) - no lava
+      game.movePlayer(0, -1);
+      expect(game.getPlayerStats().health).toEqual({ current: 10, max: 10 });
+
+      // Move up to (4,1) - lava! Should take 1 damage
       game.movePlayer(0, -1);
       expect(game.getPlayerStats().health).toEqual({ current: 9, max: 10 });
-
-      // Move up to (4,1) - lava! Should take 1 more damage
-      game.movePlayer(0, -1);
-      expect(game.getPlayerStats().health).toEqual({ current: 8, max: 10 });
     });
 
     it("emits environment events when player enters lava", () => {
@@ -275,9 +274,10 @@ describe("environments", () => {
         events.push(`damage:${event.damage}`);
       });
 
-      // Move onto lava at (4,2)
+      // Move onto lava at (4,1)
       game.movePlayer(1, 0); // to (4,3)
-      game.movePlayer(0, -1); // to (4,2) - lava
+      game.movePlayer(0, -1); // to (4,2) - no lava
+      game.movePlayer(0, -1); // to (4,1) - lava
 
       expect(events).toContain("entered:lava");
       expect(events).toContain("damage:1");

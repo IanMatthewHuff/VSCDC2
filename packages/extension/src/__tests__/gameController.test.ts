@@ -31,6 +31,17 @@ vi.mock("vscode", () => {
         public readonly character: number
       ) {}
     },
+    Range: class {
+      constructor(
+        public readonly startLine: number,
+        public readonly startChar: number,
+        public readonly endLine: number,
+        public readonly endChar: number
+      ) {}
+    },
+    ThemeColor: class {
+      constructor(public readonly id: string) {}
+    },
     EventEmitter: MockEventEmitter,
     TreeItem: class {
       label: string;
@@ -48,18 +59,23 @@ vi.mock("vscode", () => {
     },
     workspace: {
       openTextDocument: vi.fn().mockResolvedValue({}),
+      onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
     },
     window: {
       showTextDocument: vi.fn().mockResolvedValue({
         selection: {
           active: { line: 0, character: 0 },
         },
+        setDecorations: vi.fn(),
       }),
       showInformationMessage: vi.fn(),
       onDidChangeTextEditorSelection: vi.fn((listener: (event: any) => void) => {
         selectionChangeListeners.push(listener);
         return { dispose: vi.fn() };
       }),
+      createTextEditorDecorationType: vi.fn(() => ({
+        dispose: vi.fn(),
+      })),
     },
     commands: {
       executeCommand: vi.fn(),
