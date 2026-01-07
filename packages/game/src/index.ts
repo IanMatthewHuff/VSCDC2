@@ -10,6 +10,8 @@ import { createTestLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
+import { createGoblin, resetEnemyIdCounter } from "./enemies";
+import { processAllEnemyTurns } from "./enemyAI";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -39,6 +41,9 @@ export {
   getEnvironmentEffect,
 } from "./environments";
 export type { EnvironmentEffect } from "./environments";
+
+// Re-export enemy types and utilities
+export { createGoblin } from "./enemies";
 
 /** Verify engine dependency is working */
 export function getEngineVersion(): string {
@@ -126,12 +131,21 @@ export function createTargetDummy(position: Position): Enemy {
 }
 
 /**
+ * Options for creating a game session
+ */
+export interface CreateGameOptions {
+  /** Whether to include enemies that move and attack (default: false for backward compatibility) */
+  includeEnemies?: boolean;
+}
+
+/**
  * Creates a new game instance with the test level
  */
-export function createGame(): GameSession {
-  // Reset entity ID counter for consistent IDs in tests
+export function createGame(options: CreateGameOptions = {}): GameSession {
+  // Reset entity ID counters for consistent IDs in tests
   entityIdCounter = 0;
   resetNPCIdCounter();
+  resetEnemyIdCounter();
 
   // Initialize environment effects
   initializeEnvironmentEffects();
@@ -150,6 +164,13 @@ export function createGame(): GameSession {
   const targetDummy = createTargetDummy({ x: 2, y: 2 });
   engine.addEntity(targetDummy);
 
+  // Add a Goblin enemy if requested
+  // Goblin is placed at (1, 1) in the top-left corner
+  if (options.includeEnemies) {
+    const goblin = createGoblin({ x: 1, y: 1 });
+    engine.addEntity(goblin);
+  }
+
   // Add the Sage NPC to the level at position (1, 2)
   // This position avoids the target dummy at (2,2) and movement test paths
   const sage = createSage({ x: 1, y: 2 });
@@ -164,6 +185,7 @@ export function createGame(): GameSession {
    * Attempts to move the player by the given offset.
    * If an NPC is at the target position, interacts instead.
    * If an enemy is at the target position, attacks instead.
+   * After a successful action, processes enemy turns.
    * Returns the result of the action.
    */
   function movePlayer(dx: number, dy: number): ActionResult {
@@ -177,6 +199,7 @@ export function createGame(): GameSession {
     if (npcAtTarget) {
       // Interact with the NPC instead of moving
       // The NPC interaction is handled by the UI layer, not here
+      // NPC interaction does not trigger enemy turns
       return {
         success: true,
         actionType: "interact",
@@ -189,6 +212,10 @@ export function createGame(): GameSession {
     if (entityAtTarget) {
       // Attack the entity instead of moving
       const attackResult = engine.attack(entityAtTarget.id);
+      
+      // Process enemy turns after player attack
+      processAllEnemyTurns(engine, level);
+      
       return {
         success: attackResult.hit,
         actionType: "attack",
@@ -209,6 +236,9 @@ export function createGame(): GameSession {
           engine.applyEnvironmentDamage(environment.type, effect.damage);
         }
       }
+
+      // Process enemy turns after player movement
+      processAllEnemyTurns(engine, level);
 
       return {
         success: true,

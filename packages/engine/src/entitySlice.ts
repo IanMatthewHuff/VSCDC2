@@ -36,6 +36,14 @@ export interface RemoveEntityPayload {
 }
 
 /**
+ * Payload for moving an entity
+ */
+export interface MoveEntityPayload {
+  id: string;
+  position: Position;
+}
+
+/**
  * Payload for adding an NPC
  */
 export interface AddNPCPayload {
@@ -82,6 +90,17 @@ const entitySlice = createSlice({
     removeEntity: (state, action: PayloadAction<RemoveEntityPayload>) => {
       const { id } = action.payload;
       delete state.entities[id];
+    },
+
+    /**
+     * Move an entity to a new position
+     */
+    moveEntity: (state, action: PayloadAction<MoveEntityPayload>) => {
+      const { id, position } = action.payload;
+      const entity = state.entities[id];
+      if (entity) {
+        entity.position = { ...position };
+      }
     },
 
     /**
@@ -174,6 +193,6 @@ export function selectNPCById(
   return state.npcs[id];
 }
 
-export const { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } =
+export const { addEntity, damageEntity, removeEntity, moveEntity, clearEntities, addNPC, removeNPC, clearNPCs } =
   entitySlice.actions;
 export default entitySlice.reducer;
