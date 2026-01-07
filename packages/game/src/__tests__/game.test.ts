@@ -21,10 +21,13 @@ describe("createGame", () => {
   it("creates a target dummy in the level", () => {
     const game = createGame();
     const entities = game.getEntities();
-    expect(entities).toHaveLength(1);
-    expect(entities[0].name).toBe("Target Dummy");
-    expect(entities[0].type).toBe("target_dummy");
-    expect(entities[0].position).toEqual({ x: 2, y: 2 });
+    expect(entities.length).toBeGreaterThanOrEqual(1);
+    
+    // Find the target dummy among entities
+    const targetDummy = entities.find(e => e.type === "target_dummy");
+    expect(targetDummy).toBeDefined();
+    expect(targetDummy?.name).toBe("Target Dummy");
+    expect(targetDummy?.position).toEqual({ x: 2, y: 2 });
   });
 
   describe("getPlayerStats", () => {
@@ -40,8 +43,12 @@ describe("createGame", () => {
     it("returns all entities in the game", () => {
       const game = createGame();
       const entities = game.getEntities();
-      expect(entities).toHaveLength(1);
-      expect(entities[0].name).toBe("Target Dummy");
+      expect(entities.length).toBeGreaterThanOrEqual(1);
+      
+      // Verify target dummy exists
+      const targetDummy = entities.find(e => e.type === "target_dummy");
+      expect(targetDummy).toBeDefined();
+      expect(targetDummy?.name).toBe("Target Dummy");
     });
   });
 
@@ -168,7 +175,10 @@ describe("createGame", () => {
 
       expect(result.targetDestroyed).toBe(true);
       expect(game.getEntityAt({ x: 2, y: 2 })).toBeUndefined();
-      expect(game.getEntities()).toHaveLength(0);
+      
+      // There should still be other entities (like the goblin)
+      const entities = game.getEntities();
+      expect(entities.find(e => e.type === "target_dummy")).toBeUndefined();
     });
 
     it("can move onto tile after enemy is destroyed", () => {

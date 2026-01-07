@@ -91,7 +91,9 @@ The engine exposes a clean API for the UI layer via the `GameEngine` class:
 - `getEntityAt(position)` — Get enemy at position
 - `getEntityById(id)` — Get enemy by ID
 - `removeEntity(id)` — Remove an enemy
-- `attack(targetId, damage)` — Attack an enemy
+- `moveEntity(id, position)` — Move an enemy to a new position
+- `attack(targetId, damage)` — Player attacks an enemy
+- `enemyAttackPlayer(attackerId, damage)` — Enemy attacks the player
 
 **NPC Management**:
 - `addNPC(npc)` — Add an NPC to the game
@@ -128,10 +130,11 @@ Future additions:
 - ✓ Player slice with movement actions and health tracking
 - ✓ Game slice with turn management
 - ✓ Entity slice with enemy and NPC management
+- ✓ Entity movement actions for AI-controlled enemies
 - ✓ Environment slice with environment management
 - ✓ Event middleware for emitting game events
 - ✓ GameEngine API wrapper with entity, NPC, and environment methods
-- ✓ Combat system with attack and damage mechanics
+- ✓ Combat system with attack and damage mechanics (player and enemy)
 - ✓ Environment damage system
 - ✓ NPC interaction event types
 - ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
@@ -162,15 +165,21 @@ Manages all game entities (enemies and NPCs) through Redux:
 
 **Entity Slice** (`entitySlice.ts`):
 - Manages two separate collections: `entities` (enemies) and `npcs`
-- Actions: `addEntity`, `damageEntity`, `removeEntity`, `addNPC`, `removeNPC`
+- Actions: `addEntity`, `damageEntity`, `removeEntity`, `moveEntity`, `addNPC`, `removeNPC`
 - Selectors: `selectEntityAt`, `selectNPCAt`, `selectAllEntities`, `selectAllNPCs`
 - Position-based queries for spatial lookups
 
+**Enemy Movement**:
+- `moveEntity(id, position)` action updates enemy position in state
+- Movement is handled by game-level AI logic (not part of engine)
+- Engine provides primitive movement capability, game layer implements pathfinding
+
 **Entity Management Flow**:
-1. Game package creates entity definitions (e.g., `createSage()`, `createTargetDummy()`)
+1. Game package creates entity definitions (e.g., `createSage()`, `createGoblin()`)
 2. Entities are added to engine via `addEntity()` or `addNPC()`
 3. Engine stores entities in Redux state
-4. Extension queries entities for rendering and interaction
+4. Game layer implements AI to move enemies via `moveEntity()`
+5. Extension queries entities for rendering and interaction
 
 ### Event Bus
 **Status: Implemented**

@@ -11,6 +11,7 @@ import {
   addEntity,
   damageEntity,
   removeEntity,
+  moveEntity,
   selectEntityAt,
   selectAllEntities,
   selectEntityById,
@@ -176,6 +177,13 @@ export class GameEngine {
     this.store.dispatch(removeEntity({ id }));
   }
 
+  /**
+   * Move an entity to a new position
+   */
+  public moveEntity(id: string, position: Position): void {
+    this.store.dispatch(moveEntity({ id, position }));
+  }
+
   // ============================================
   // NPC Management
   // ============================================
@@ -269,6 +277,32 @@ export class GameEngine {
       targetDestroyed,
       target: updatedTarget,
     };
+  }
+
+  /**
+   * Enemy attacks the player
+   * @param attackerId The ID of the attacking enemy
+   * @param damage The amount of damage to deal (default: 1)
+   */
+  public enemyAttackPlayer(attackerId: string, damage: number = 1): void {
+    const attacker = this.getEntityById(attackerId);
+    const player = this.store.getState().player;
+
+    if (!attacker) {
+      return;
+    }
+
+    // Queue the attack event
+    queueAttackEvent({
+      attackerId: attacker.id,
+      attackerName: attacker.name,
+      targetId: player.id,
+      targetName: player.name,
+      damage: damage,
+    });
+
+    // Deal damage to player
+    this.store.dispatch(damagePlayer({ amount: damage }));
   }
 
   // ============================================
