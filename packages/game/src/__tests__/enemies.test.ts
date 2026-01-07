@@ -21,8 +21,8 @@ describe("Enemy movement and combat", () => {
       expect(goblin1.id).not.toBe(goblin2.id);
     });
 
-    it("is included when includeEnemies option is true", () => {
-      const game = createGame({ includeEnemies: true });
+    it("is included by default", () => {
+      const game = createGame();
       const entities = game.getEntities();
       
       const goblin = entities.find(e => e.type === "goblin");
@@ -30,16 +30,8 @@ describe("Enemy movement and combat", () => {
       expect(goblin?.name).toBe("Goblin");
     });
 
-    it("is not included when includeEnemies option is false", () => {
-      const game = createGame({ includeEnemies: false });
-      const entities = game.getEntities();
-      
-      const goblin = entities.find(e => e.type === "goblin");
-      expect(goblin).toBeUndefined();
-    });
-
-    it("is not included by default", () => {
-      const game = createGame();
+    it("is not included when excludeEnemies option is true", () => {
+      const game = createGame({ excludeEnemies: true });
       const entities = game.getEntities();
       
       const goblin = entities.find(e => e.type === "goblin");
@@ -49,7 +41,7 @@ describe("Enemy movement and combat", () => {
 
   describe("Goblin movement", () => {
     it("goblin moves toward player", () => {
-      const game = createGame({ includeEnemies: true });
+      const game = createGame(); // Goblin included by default
       
       // Goblin starts at (1, 1), player at (3, 3)
       const goblinBefore = game.getEntityAt({ x: 1, y: 1 });
@@ -75,7 +67,7 @@ describe("Enemy movement and combat", () => {
     });
 
     it("goblin avoids lava when moving", () => {
-      const game = createGame({ includeEnemies: true });
+      const game = createGame(); // Goblin included by default
       
       // Lava is at (4, 1), goblin at (1, 1), player at (3, 3)
       // If goblin tries to move toward player, it should avoid lava
@@ -91,7 +83,7 @@ describe("Enemy movement and combat", () => {
     });
 
     it("goblin attacks player when adjacent", () => {
-      const game = createGame({ includeEnemies: true });
+      const game = createGame(); // Goblin included by default
       
       const initialHealth = game.getPlayerStats().health.current;
       
@@ -118,7 +110,8 @@ describe("Enemy movement and combat", () => {
     });
 
     it("player can attack and destroy goblin", () => {
-      const game = createGame();
+      // Use excludeEnemies to start with no goblins, then add one at a specific position
+      const game = createGame({ excludeEnemies: true });
       
       // Manually add a goblin next to the player for easy testing
       const goblin = createGoblin({ x: 4, y: 3 });

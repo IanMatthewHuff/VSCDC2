@@ -78,7 +78,8 @@ describe("createGame", () => {
     });
 
     it("blocks movement into walls", () => {
-      const game = createGame();
+      // Use excludeEnemies to avoid goblin at (1,1)
+      const game = createGame({ excludeEnemies: true });
       // Move to edge first (1,1)
       game.movePlayer(-2, -2);
       // Try to move into wall
@@ -106,7 +107,8 @@ describe("createGame", () => {
     });
 
     it("blocks movement at all walls", () => {
-      const game = createGame();
+      // Use excludeEnemies to avoid goblin at (1,1) interfering with wall tests
+      const game = createGame({ excludeEnemies: true });
       // Move to top-left corner (1,1)
       game.movePlayer(-2, -2);
       expect(game.movePlayer(-1, 0).actionType).toBe("blocked"); // left wall
@@ -165,7 +167,8 @@ describe("createGame", () => {
     });
 
     it("destroys enemy after enough attacks", () => {
-      const game = createGame();
+      // Use excludeEnemies to test clean target dummy destruction
+      const game = createGame({ excludeEnemies: true });
       game.movePlayer(-1, 0); // Move to 2,3
 
       // Target dummy has 3 HP, attack 3 times
@@ -176,13 +179,14 @@ describe("createGame", () => {
       expect(result.targetDestroyed).toBe(true);
       expect(game.getEntityAt({ x: 2, y: 2 })).toBeUndefined();
       
-      // There should still be other entities (like the goblin)
+      // No entities should remain (only target dummy existed)
       const entities = game.getEntities();
       expect(entities.find(e => e.type === "target_dummy")).toBeUndefined();
     });
 
     it("can move onto tile after enemy is destroyed", () => {
-      const game = createGame();
+      // Use excludeEnemies to ensure tile is clear after destroying target dummy
+      const game = createGame({ excludeEnemies: true });
       game.movePlayer(-1, 0); // Move to 2,3
 
       // Destroy the target dummy
@@ -251,7 +255,8 @@ describe("environments", () => {
 
   describe("environment damage", () => {
     it("deals damage when player moves onto lava", () => {
-      const game = createGame();
+      // Use excludeEnemies to avoid goblin attack damage
+      const game = createGame({ excludeEnemies: true });
       
       // Player starts at (3,3) with 10 HP
       const initialHealth = game.getPlayerStats().health;

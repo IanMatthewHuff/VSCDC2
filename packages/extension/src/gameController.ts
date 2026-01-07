@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import {
   GameSession,
   createGame,
+  CreateGameOptions,
   getTileAt,
   getDialogHandler,
   getEnvironmentEffect,
@@ -93,10 +94,11 @@ export class GameController {
 
   /**
    * Start a new game session
+   * @param options Optional game creation options
    */
-  async startGame(): Promise<void> {
+  async startGame(options?: CreateGameOptions): Promise<void> {
     // Create a new game session
-    this.gameSession = createGame();
+    this.gameSession = createGame(options);
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
 

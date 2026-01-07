@@ -3,7 +3,7 @@ import { createGame } from "../index";
 
 describe("Enemy system integration", () => {
   it("complete enemy behavior scenario", () => {
-    const game = createGame({ includeEnemies: true });
+    const game = createGame(); // Goblin included by default
     
     // Initial setup: Player at (3,3), Goblin at (1,1), Target Dummy at (2,2)
     const initialPlayerHealth = game.getPlayerStats().health.current;
@@ -48,7 +48,8 @@ describe("Enemy system integration", () => {
   });
 
   it("player can fight back and destroy goblin", () => {
-    const game = createGame();
+    // Use excludeEnemies to start with no goblins, then add one at a specific position
+    const game = createGame({ excludeEnemies: true });
     
     // Manually place goblin next to player for controlled test
     const goblin = createGoblin({ x: 2, y: 3 });
@@ -81,7 +82,7 @@ describe("Enemy system integration", () => {
   });
 
   it("goblin avoids lava while pursuing player", () => {
-    const game = createGame({ includeEnemies: true });
+    const game = createGame(); // Goblin included by default
     
     // Lava at (4, 1), goblin starts at (1, 1)
     // If we move player to (4, 2), goblin might try to reach via (4, 1) but should avoid

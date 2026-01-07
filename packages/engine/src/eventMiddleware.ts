@@ -126,7 +126,10 @@ export function createEventMiddleware(
 
     // Emit attack events for any pending attacks
     for (const attack of pendingAttacks) {
+      // Check if target is an entity or the player
       const targetEntity = nextState.entities.entities[attack.targetId];
+      const isTargetPlayer = attack.targetId === nextState.player.id;
+      
       const attackEvent: AttackEvent = {
         type: GameEventType.ATTACK,
         timestamp: Date.now(),
@@ -135,8 +138,12 @@ export function createEventMiddleware(
         targetId: attack.targetId,
         targetName: attack.targetName,
         damage: attack.damage,
-        targetRemainingHp: targetEntity?.health.current ?? 0,
-        targetMaxHp: targetEntity?.health.max ?? 0,
+        targetRemainingHp: isTargetPlayer 
+          ? nextState.player.health.current 
+          : (targetEntity?.health.current ?? 0),
+        targetMaxHp: isTargetPlayer 
+          ? nextState.player.health.max 
+          : (targetEntity?.health.max ?? 0),
       };
       emitEvent(eventHandlers, attackEvent);
     }

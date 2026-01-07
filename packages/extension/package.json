@@ -20,6 +20,11 @@
         "category": "Dungeon Crawler"
       },
       {
+        "command": "vscdc.startGameNoEnemies",
+        "title": "Start Game (No Enemies)",
+        "category": "Dungeon Crawler"
+      },
+      {
         "command": "vscdc.moveUp",
         "title": "Move Up",
         "category": "Dungeon Crawler"

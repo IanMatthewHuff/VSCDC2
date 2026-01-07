@@ -134,8 +134,8 @@ export function createTargetDummy(position: Position): Enemy {
  * Options for creating a game session
  */
 export interface CreateGameOptions {
-  /** Whether to include enemies that move and attack (default: false for backward compatibility) */
-  includeEnemies?: boolean;
+  /** Whether to exclude enemies that move and attack (default: false, enemies are included) */
+  excludeEnemies?: boolean;
 }
 
 /**
@@ -164,9 +164,9 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   const targetDummy = createTargetDummy({ x: 2, y: 2 });
   engine.addEntity(targetDummy);
 
-  // Add a Goblin enemy if requested
+  // Add a Goblin enemy unless excluded
   // Goblin is placed at (1, 1) in the top-left corner
-  if (options.includeEnemies) {
+  if (!options.excludeEnemies) {
     const goblin = createGoblin({ x: 1, y: 1 });
     engine.addEntity(goblin);
   }

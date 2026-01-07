@@ -71,6 +71,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.startGameNoEnemies", async () => {
+      await gameController?.startGame({ excludeEnemies: true });
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("vscdc.moveUp", () => {
       gameController?.moveUp();
     })
