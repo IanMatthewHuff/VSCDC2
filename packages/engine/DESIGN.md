@@ -218,8 +218,7 @@ interface Environment {
   id: string;              // Unique identifier
   type: string;            // Environment type (e.g., "lava")
   position: Position;      // Where the environment exists
-  displayChar: string;     // Character for rendering
-  color: string;           // Color for visual representation
+  color: string;           // Color for UI highlighting/decorations (not rendered as character)
 }
 ```
 

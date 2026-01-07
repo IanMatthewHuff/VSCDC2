@@ -229,7 +229,6 @@ describe("environments", () => {
       
       expect(env).toBeDefined();
       expect(env?.type).toBe("lava");
-      expect(env?.displayChar).toBe("~");
       expect(env?.color).toBe("orange");
     });
 

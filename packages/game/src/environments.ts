@@ -51,13 +51,13 @@ let environmentIdCounter = 0;
 /**
  * Creates a lava environment at the specified position
  * Lava deals 1 damage to any character that enters it
+ * Visual representation is handled by UI decorations (orange highlight)
  */
 export function createLavaEnvironment(position: Position): Environment {
   return {
     id: `lava_${environmentIdCounter++}`,
     type: EnvironmentType.Lava,
     position,
-    displayChar: "~",
     color: "orange",
   };
 }

@@ -134,7 +134,8 @@ The environment system enables tiles to have environmental effects that can affe
 **Environment Factories**:
 - `createLavaEnvironment(position)`: Creates a lava environment
   - Deals 1 damage on entry
-  - Display character: "~", color: "orange"
+  - Color: "orange" (for UI highlighting/decorations)
+  - No display character (rendered via UI decorations only)
   - Unique ID generation for tracking
 
 **Initialization**:
@@ -145,7 +146,7 @@ The environment system enables tiles to have environmental effects that can affe
 **Current Environments**:
 - **Lava**: Damaging environment at positions (4,1) and (4,2) in test level
   - Deals 1 HP damage when player enters
-  - Visual: "~" in orange color
+  - Visual: Orange background highlight (no character displayed)
   - Triggers environment events for UI logging
 
 **Integration with Game Loop**:

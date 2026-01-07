@@ -14,7 +14,6 @@ describe("environments", () => {
 
       expect(env.type).toBe(EnvironmentType.Lava);
       expect(env.position).toEqual({ x: 3, y: 4 });
-      expect(env.displayChar).toBe("~");
       expect(env.color).toBe("orange");
       expect(env.id).toContain("lava_");
     });

@@ -87,9 +87,7 @@ export interface Environment {
   type: string;
   /** Position where this environment exists */
   position: Position;
-  /** Display character for rendering */
-  displayChar: string;
-  /** Color for visual representation */
+  /** Color for visual representation (used for UI highlighting/decorations) */
   color: string;
 }
 

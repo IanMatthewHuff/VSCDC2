@@ -14,7 +14,6 @@ describe("environmentSlice", () => {
       id: "test_env_1",
       type: "lava",
       position: { x: 2, y: 3 },
-      displayChar: "~",
       color: "red",
       ...overrides,
     };
