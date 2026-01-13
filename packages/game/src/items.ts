@@ -52,7 +52,9 @@ export function createLeatherArmor(): EquipmentItem {
 /**
  * Creates a basic iron sword equipment item
  * Provides +2 attack when equipped
- * Note: This is armor slot for now since we only have armor slot
+ * 
+ * Note: Currently using armor slot since we only have one equipment slot.
+ * In the future, this should use a weapon-specific slot.
  * 
  * @returns A new iron sword equipment item
  */
@@ -61,7 +63,7 @@ export function createIronSword(): EquipmentItem {
     id: generateItemId("iron_sword"),
     name: "Iron Sword",
     type: ItemTypeEnum.Equipment,
-    slot: EquipmentSlotEnum.Armor,
+    slot: EquipmentSlotEnum.Armor, // TODO: Create weapon slot
     description: "A sturdy iron blade",
     attack: 2,
   };
