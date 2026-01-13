@@ -26,6 +26,7 @@ import {
 } from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
 import { PlayerTreeProvider } from "./playerTreeProvider";
+import { EquipmentTreeProvider } from "./equipmentTreeProvider";
 import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 
 /**
@@ -58,6 +59,7 @@ export class GameController {
   private gameSession: GameSession | null = null;
   private documentProvider: GameDocumentProvider;
   private playerTreeProvider: PlayerTreeProvider;
+  private equipmentTreeProvider: EquipmentTreeProvider;
   private cursorLocationTreeProvider: CursorLocationTreeProvider;
   private outputChannels: GameOutputChannels;
   private gameEditor: vscode.TextEditor | null = null;
@@ -71,11 +73,13 @@ export class GameController {
     private context: vscode.ExtensionContext,
     documentProvider: GameDocumentProvider,
     playerTreeProvider: PlayerTreeProvider,
+    equipmentTreeProvider: EquipmentTreeProvider,
     cursorLocationTreeProvider: CursorLocationTreeProvider,
     outputChannels: GameOutputChannels
   ) {
     this.documentProvider = documentProvider;
     this.playerTreeProvider = playerTreeProvider;
+    this.equipmentTreeProvider = equipmentTreeProvider;
     this.cursorLocationTreeProvider = cursorLocationTreeProvider;
     this.outputChannels = outputChannels;
 
@@ -101,6 +105,7 @@ export class GameController {
     this.gameSession = createGame(options);
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+    this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
 
     // Update cursor location to initial position
     this.updateCursorLocation();
@@ -399,6 +404,7 @@ export class GameController {
     this.gameSession = null;
     this.gameEditor = null;
     this.playerTreeProvider.setPlayerStats(null);
+    this.equipmentTreeProvider.setEquipment(null);
     this.cursorLocationTreeProvider.setLocationInfo(null);
     vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, false);
   }
@@ -439,8 +445,9 @@ export class GameController {
 
     const result = this.gameSession.movePlayer(dx, dy);
 
-    // Update player stats after any action
+    // Update player stats and equipment after any action
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+    this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
 
     // Update cursor location after movement
     this.updateCursorLocation();
@@ -599,6 +606,37 @@ export class GameController {
    */
   hasActiveGame(): boolean {
     return this.gameSession !== null;
+  }
+
+  /**
+   * Use a consumable item from a specific slot
+   */
+  useConsumable(slot: number): void {
+    if (!this.gameSession) return;
+
+    // Use the consumable
+    this.gameSession.useConsumable(slot);
+
+    // Update UI
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+    this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
+
+    vscode.window.showInformationMessage(`Used consumable from slot ${slot + 1}`);
+  }
+
+  /**
+   * Remove a consumable item from a specific slot
+   */
+  removeConsumable(slot: number): void {
+    if (!this.gameSession) return;
+
+    // Remove the consumable
+    this.gameSession.removeConsumable(slot);
+
+    // Update UI
+    this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
+
+    vscode.window.showInformationMessage(`Removed consumable from slot ${slot + 1}`);
   }
 
   dispose(): void {

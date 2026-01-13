@@ -5,13 +5,22 @@
  * rules, and content. It depends on @vscdc/engine.
  */
 
-import { ENGINE_VERSION, GameEngine, Enemy, NPC, Position, Environment } from "@vscdc/engine";
+import { 
+  ENGINE_VERSION, 
+  GameEngine, 
+  Enemy, 
+  NPC, 
+  Position, 
+  Environment,
+  ConsumableItem,
+} from "@vscdc/engine";
 import { createTestLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
 import { createGoblin, resetEnemyIdCounter } from "./enemies";
 import { processAllEnemyTurns } from "./enemyAI";
+import { createHealingPotion, resetItemIdCounter } from "./items";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -26,7 +35,15 @@ export {
 export type { Tile, Level } from "./level";
 
 // Re-export entity types from engine
-export type { Enemy, NPC, Position, Environment } from "@vscdc/engine";
+export type { 
+  Enemy, 
+  NPC, 
+  Position, 
+  Environment,
+  ConsumableItem,
+  EquipmentItem,
+  PlayerEquipment,
+} from "@vscdc/engine";
 
 // Re-export NPC and dialog types
 export { createSage, initializeNPCDialogs } from "./npcs";
@@ -45,6 +62,13 @@ export type { EnvironmentEffect } from "./environments";
 // Re-export enemy types and utilities
 export { createGoblin } from "./enemies";
 
+// Re-export item types and utilities
+export { 
+  createHealingPotion,
+  createLeatherArmor,
+  createIronSword,
+} from "./items";
+
 /** Verify engine dependency is working */
 export function getEngineVersion(): string {
   return ENGINE_VERSION;
@@ -56,6 +80,12 @@ export function getEngineVersion(): string {
 export interface PlayerStats {
   name: string;
   health: { current: number; max: number };
+  attack: number;
+  defense: number;
+  equipment: {
+    armor: string | null;
+    consumables: (string | null)[];
+  };
 }
 
 /**
@@ -96,6 +126,10 @@ export interface GameSession {
   getEnvironments: () => Environment[];
   /** Get environment at a specific position */
   getEnvironmentAt: (position: Position) => Environment | undefined;
+  /** Use a consumable item from a specific slot (0-2) */
+  useConsumable: (slot: number) => void;
+  /** Remove a consumable item from a specific slot (0-2) */
+  removeConsumable: (slot: number) => void;
 }
 
 // ============================================
@@ -146,6 +180,7 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   entityIdCounter = 0;
   resetNPCIdCounter();
   resetEnemyIdCounter();
+  resetItemIdCounter();
 
   // Initialize environment effects
   initializeEnvironmentEffects();
@@ -180,6 +215,11 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   // This avoids the Sage (1,2), Target Dummy (2,2), and Player Start (3,3)
   const lava = createLavaEnvironment({ x: 4, y: 1 });
   engine.addEnvironment(lava);
+
+  // Add some starting items to the player's consumable slots
+  // Add a healing potion to slot 0
+  const healingPotion = createHealingPotion();
+  engine.addConsumableItem(healingPotion, 0);
 
   /**
    * Attempts to move the player by the given offset.
@@ -257,9 +297,16 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
    * Gets the current player stats
    */
   function getPlayerStats(): PlayerStats {
+    const equipment = engine.getPlayerEquipment();
     return {
       name: engine.getPlayerName(),
       health: engine.getPlayerHealth(),
+      attack: engine.getPlayerAttack(),
+      defense: engine.getPlayerDefense(),
+      equipment: {
+        armor: equipment.armor?.name || null,
+        consumables: equipment.consumables.map((item) => item?.name || null),
+      },
     };
   }
 
@@ -305,6 +352,20 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
     return engine.getEnvironmentAt(position);
   }
 
+  /**
+   * Uses a consumable item from a specific slot (0-2)
+   */
+  function useConsumable(slot: number): void {
+    engine.useConsumableItem(slot);
+  }
+
+  /**
+   * Removes a consumable item from a specific slot (0-2)
+   */
+  function removeConsumable(slot: number): void {
+    engine.removeConsumableItem(slot);
+  }
+
   return {
     engine,
     level,
@@ -316,5 +377,7 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
     getNPCAt,
     getEnvironments,
     getEnvironmentAt,
+    useConsumable,
+    removeConsumable,
   };
 }

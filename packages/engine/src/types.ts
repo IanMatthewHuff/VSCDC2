@@ -19,6 +19,73 @@ export interface Stat {
 }
 
 /**
+ * Equipment slot types
+ */
+export enum EquipmentSlot {
+  Armor = "armor",
+}
+
+/**
+ * Item types
+ */
+export enum ItemType {
+  Consumable = "consumable",
+  Equipment = "equipment",
+}
+
+/**
+ * Effect that can be applied when using an item
+ */
+export interface ItemEffect {
+  /** Type of effect (e.g., "heal") */
+  type: string;
+  /** Amount of the effect (e.g., healing amount) */
+  amount?: number;
+}
+
+/**
+ * Base item interface
+ */
+export interface Item {
+  id: string;
+  name: string;
+  type: ItemType;
+  description?: string;
+}
+
+/**
+ * Consumable item that can be used once
+ */
+export interface ConsumableItem extends Item {
+  type: ItemType.Consumable;
+  /** Effect to apply when used */
+  effect: ItemEffect;
+}
+
+/**
+ * Equipment item that can be equipped
+ */
+export interface EquipmentItem extends Item {
+  type: ItemType.Equipment;
+  /** Slot this equipment goes in */
+  slot: EquipmentSlot;
+  /** Attack bonus provided by this equipment */
+  attack?: number;
+  /** Defense bonus provided by this equipment */
+  defense?: number;
+}
+
+/**
+ * Player equipment state
+ */
+export interface PlayerEquipment {
+  /** Equipped armor item, if any */
+  armor: EquipmentItem | null;
+  /** Consumable items in quick slots (max 3) */
+  consumables: (ConsumableItem | null)[];
+}
+
+/**
  * Represents the player character
  */
 export interface Player {
@@ -28,6 +95,12 @@ export interface Player {
   displayChar: string;
   color: string;
   health: Stat;
+  /** Player's equipment */
+  equipment: PlayerEquipment;
+  /** Base attack value (before equipment bonuses) */
+  baseAttack: number;
+  /** Base defense value (before equipment bonuses) */
+  baseDefense: number;
 }
 
 /**

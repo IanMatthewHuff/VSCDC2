@@ -4,8 +4,17 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState, Enemy, NPC, Position, Environment } from "./types";
-import { movePlayer, movePlayerBy, damagePlayer } from "./playerSlice";
+import { GameState, Enemy, NPC, Position, Environment, EquipmentItem, ConsumableItem, PlayerEquipment } from "./types";
+import { 
+  movePlayer, 
+  movePlayerBy, 
+  damagePlayer, 
+  healPlayer,
+  equipArmor,
+  unequipArmor,
+  addConsumable,
+  removeConsumable,
+} from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
 import {
   addEntity,
@@ -136,6 +145,87 @@ export class GameEngine {
   public getPlayerHealth(): { current: number; max: number } {
     const health = this.store.getState().player.health;
     return { current: health.current, max: health.max };
+  }
+
+  /**
+   * Get the player's equipment
+   */
+  public getPlayerEquipment(): PlayerEquipment {
+    return this.store.getState().player.equipment;
+  }
+
+  /**
+   * Get the player's total attack (base + equipment bonuses)
+   */
+  public getPlayerAttack(): number {
+    const player = this.store.getState().player;
+    const armorBonus = player.equipment.armor?.attack || 0;
+    return player.baseAttack + armorBonus;
+  }
+
+  /**
+   * Get the player's total defense (base + equipment bonuses)
+   */
+  public getPlayerDefense(): number {
+    const player = this.store.getState().player;
+    const armorBonus = player.equipment.armor?.defense || 0;
+    return player.baseDefense + armorBonus;
+  }
+
+  /**
+   * Heal the player by the specified amount
+   */
+  public healPlayerBy(amount: number): void {
+    this.store.dispatch(healPlayer({ amount }));
+  }
+
+  /**
+   * Equip an armor item
+   */
+  public equipArmorItem(item: EquipmentItem): void {
+    this.store.dispatch(equipArmor({ item }));
+  }
+
+  /**
+   * Unequip the current armor
+   */
+  public unequipArmorItem(): void {
+    this.store.dispatch(unequipArmor());
+  }
+
+  /**
+   * Add a consumable item to a specific slot (0-2)
+   */
+  public addConsumableItem(item: ConsumableItem, slot: number): void {
+    this.store.dispatch(addConsumable({ item, slot }));
+  }
+
+  /**
+   * Remove a consumable item from a specific slot (0-2)
+   */
+  public removeConsumableItem(slot: number): void {
+    this.store.dispatch(removeConsumable({ slot }));
+  }
+
+  /**
+   * Use a consumable item from a specific slot (0-2)
+   * Applies the item's effect and removes it from the slot
+   */
+  public useConsumableItem(slot: number): void {
+    const equipment = this.getPlayerEquipment();
+    const item = equipment.consumables[slot];
+    
+    if (!item) {
+      return;
+    }
+
+    // Apply the item's effect
+    if (item.effect.type === "heal" && typeof item.effect.amount === "number") {
+      this.healPlayerBy(item.effect.amount);
+    }
+
+    // Remove the item from the slot
+    this.removeConsumableItem(slot);
   }
 
   // ============================================

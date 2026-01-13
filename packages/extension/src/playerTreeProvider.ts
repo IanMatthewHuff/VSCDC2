@@ -52,7 +52,7 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
     }
 
     if (!element) {
-      // Root level: show name and health
+      // Root level: show name, health, attack, and defense
       return Promise.resolve([
         new PlayerStatItem(
           "Name",
@@ -65,6 +65,18 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
           `${this.playerStats.health.current}/${this.playerStats.health.max}`,
           vscode.TreeItemCollapsibleState.None,
           new vscode.ThemeIcon("heart", new vscode.ThemeColor("charts.red"))
+        ),
+        new PlayerStatItem(
+          "Attack",
+          `${this.playerStats.attack}`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("symbol-misc")
+        ),
+        new PlayerStatItem(
+          "Defense",
+          `${this.playerStats.defense}`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("shield")
         ),
       ]);
     }

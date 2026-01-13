@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameController, GAME_ACTIVE_CONTEXT, GameOutputChannels } from "../gameController";
 import { GameDocumentProvider } from "../gameDocumentProvider";
 import { PlayerTreeProvider } from "../playerTreeProvider";
+import { EquipmentTreeProvider } from "../equipmentTreeProvider";
 import { CursorLocationTreeProvider } from "../cursorLocationTreeProvider";
 
 // Store selection change listeners so tests can trigger them
@@ -118,6 +119,7 @@ describe("GameController", () => {
   let mockContext: vscode.ExtensionContext;
   let documentProvider: GameDocumentProvider;
   let playerTreeProvider: PlayerTreeProvider;
+  let equipmentTreeProvider: EquipmentTreeProvider;
   let cursorLocationTreeProvider: CursorLocationTreeProvider;
   let mockOutputChannels: GameOutputChannels;
 
@@ -132,12 +134,14 @@ describe("GameController", () => {
 
     documentProvider = new GameDocumentProvider();
     playerTreeProvider = new PlayerTreeProvider();
+    equipmentTreeProvider = new EquipmentTreeProvider();
     cursorLocationTreeProvider = new CursorLocationTreeProvider();
     mockOutputChannels = createMockOutputChannels();
     controller = new GameController(
       mockContext,
       documentProvider,
       playerTreeProvider,
+      equipmentTreeProvider,
       cursorLocationTreeProvider,
       mockOutputChannels
     );

@@ -43,6 +43,39 @@
         "command": "vscdc.moveRight",
         "title": "Move Right",
         "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.useConsumable0",
+        "title": "Use Consumable Slot 1",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.useConsumable1",
+        "title": "Use Consumable Slot 2",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.useConsumable2",
+        "title": "Use Consumable Slot 3",
+        "category": "Dungeon Crawler"
+      },
+      {
+        "command": "vscdc.removeConsumable0",
+        "title": "Remove Consumable Slot 1",
+        "category": "Dungeon Crawler",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "vscdc.removeConsumable1",
+        "title": "Remove Consumable Slot 2",
+        "category": "Dungeon Crawler",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "vscdc.removeConsumable2",
+        "title": "Remove Consumable Slot 3",
+        "category": "Dungeon Crawler",
+        "icon": "$(trash)"
       }
     ],
     "keybindings": [
@@ -104,9 +137,48 @@
           "when": "vscdc.gameActive"
         },
         {
+          "id": "vscdc.equipmentView",
+          "name": "Equipment",
+          "when": "vscdc.gameActive"
+        },
+        {
           "id": "vscdc.cursorLocationView",
           "name": "Current Location",
           "when": "vscdc.gameActive"
+        }
+      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "vscdc.useConsumable0",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot0",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscdc.removeConsumable0",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot0",
+          "group": "inline@2"
+        },
+        {
+          "command": "vscdc.useConsumable1",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot1",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscdc.removeConsumable1",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot1",
+          "group": "inline@2"
+        },
+        {
+          "command": "vscdc.useConsumable2",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot2",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscdc.removeConsumable2",
+          "when": "view == vscdc.equipmentView && viewItem == consumableSlot2",
+          "group": "inline@2"
         }
       ]
     }
