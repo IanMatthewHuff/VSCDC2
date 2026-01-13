@@ -182,7 +182,7 @@ describe("GameController", () => {
       await controller.startGame();
 
       expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
-        "Game started! Use WASD or arrow keys to move."
+        "Game started! WASD to move character, Arrow keys or mouse to move status cursor."
       );
     });
 
@@ -198,6 +198,21 @@ describe("GameController", () => {
       expect(mockOutputChannels.gameLog.appendLine).toHaveBeenCalledWith("=== Game Log ===");
       expect(mockOutputChannels.combatLog.appendLine).toHaveBeenCalledWith("=== Combat Log ===");
       expect(mockOutputChannels.dialogLog.appendLine).toHaveBeenCalledWith("=== Dialog Log ===");
+    });
+
+    it("should reveal the view container", async () => {
+      await controller.startGame();
+
+      expect(vscode.commands.executeCommand).toHaveBeenCalledWith(
+        "vscdc.playerView.focus"
+      );
+    });
+
+    it("should show the game log output channel with focus preserved", async () => {
+      await controller.startGame();
+
+      // Game log should be shown with preserveFocus=true to keep editor focused
+      expect(mockOutputChannels.gameLog.show).toHaveBeenCalledWith(true);
     });
   });
 

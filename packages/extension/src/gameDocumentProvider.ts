@@ -104,7 +104,7 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     }
 
     lines.push("");
-    lines.push("Controls: WASD or Arrow keys to move");
+    lines.push("Controls: WASD to move character, Arrow keys or mouse to move status cursor");
 
     return lines.join("\n");
   }

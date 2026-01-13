@@ -121,12 +121,22 @@ export class GameController {
     this.outputChannels.dialogLog.appendLine("=== Dialog Log ===");
     this.outputChannels.dialogLog.appendLine("");
 
+    // Set context to indicate game is active (must be set before revealing views
+    // since views have "when": "vscdc.gameActive" condition)
+    await vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, true);
+
     // Open the game document
     const doc = await vscode.workspace.openTextDocument(GAME_DOCUMENT_URI);
     this.gameEditor = await vscode.window.showTextDocument(doc, {
       preview: false,
       preserveFocus: false,
     });
+
+    // Reveal the player view in the sidebar (this focuses the view container)
+    await vscode.commands.executeCommand("vscdc.playerView.focus");
+
+    // Show the game log output channel (preserveFocus=true keeps editor focused)
+    this.outputChannels.gameLog.show(true);
 
     // Apply initial environment decorations
     this.updateEnvironmentDecorations();
@@ -141,10 +151,7 @@ export class GameController {
       })
     );
 
-    // Set context to indicate game is active
-    vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, true);
-
-    vscode.window.showInformationMessage("Game started! Use WASD or arrow keys to move.");
+    vscode.window.showInformationMessage("Game started! WASD to move character, Arrow keys or mouse to move status cursor.");
   }
 
   /**
