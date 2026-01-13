@@ -24,7 +24,15 @@ export type {
   EntityState,
   Environment,
   EnvironmentState,
+  Item,
+  ItemType,
+  ItemEffect,
+  ConsumableItem,
+  EquipmentItem,
+  EquipmentSlot,
+  PlayerEquipment,
 } from "./types";
+export { ItemType as ItemTypeEnum, EquipmentSlot as EquipmentSlotEnum } from "./types";
 export type { CreateStoreOptions } from "./store";
 export { GameEventType } from "./events";
 export type {
@@ -41,7 +49,16 @@ export type {
 } from "./events";
 
 // Export action creators for advanced usage
-export { movePlayer, movePlayerBy, damagePlayer } from "./playerSlice";
+export { 
+  movePlayer, 
+  movePlayerBy, 
+  damagePlayer, 
+  healPlayer,
+  equipArmor,
+  unequipArmor,
+  addConsumable,
+  removeConsumable,
+} from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";

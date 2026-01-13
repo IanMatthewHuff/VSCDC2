@@ -10,6 +10,7 @@ import { GameDocumentProvider } from "./gameDocumentProvider";
 import { GameController, GameOutputChannels } from "./gameController";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
+import { EquipmentTreeProvider } from "./equipmentTreeProvider";
 
 let gameController: GameController | undefined;
 let outputChannels: GameOutputChannels | undefined;
@@ -46,6 +47,13 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(playerTreeProvider);
 
+  // Create the equipment tree provider
+  const equipmentTreeProvider = new EquipmentTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("vscdc.equipmentView", equipmentTreeProvider)
+  );
+  context.subscriptions.push(equipmentTreeProvider);
+
   // Create the cursor location tree provider
   const cursorLocationTreeProvider = new CursorLocationTreeProvider();
   context.subscriptions.push(
@@ -58,6 +66,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context,
     documentProvider,
     playerTreeProvider,
+    equipmentTreeProvider,
     cursorLocationTreeProvider,
     outputChannels
   );
@@ -97,6 +106,42 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("vscdc.moveRight", () => {
       gameController?.moveRight();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.useConsumable0", () => {
+      gameController?.useConsumable(0);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.useConsumable1", () => {
+      gameController?.useConsumable(1);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.useConsumable2", () => {
+      gameController?.useConsumable(2);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.removeConsumable0", () => {
+      gameController?.removeConsumable(0);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.removeConsumable1", () => {
+      gameController?.removeConsumable(1);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.removeConsumable2", () => {
+      gameController?.removeConsumable(2);
     })
   );
 

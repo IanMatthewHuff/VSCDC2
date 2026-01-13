@@ -3,7 +3,7 @@
  */
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Player, Position } from "./types";
+import { Player, Position, EquipmentItem, ConsumableItem } from "./types";
 
 const initialPlayerState: Player = {
   id: "player",
@@ -12,6 +12,12 @@ const initialPlayerState: Player = {
   displayChar: "@",
   color: "white",
   health: { current: 10, max: 10 },
+  equipment: {
+    armor: null,
+    consumables: [null, null, null],
+  },
+  baseAttack: 1,
+  baseDefense: 0,
 };
 
 /**
@@ -41,8 +47,54 @@ export const playerSlice = createSlice({
     damagePlayer: (state, action: PayloadAction<{ amount: number }>) => {
       state.health.current = Math.max(0, state.health.current - action.payload.amount);
     },
+    /**
+     * Heal the player, increasing current health
+     * Health will not exceed max health
+     */
+    healPlayer: (state, action: PayloadAction<{ amount: number }>) => {
+      state.health.current = Math.min(state.health.max, state.health.current + action.payload.amount);
+    },
+    /**
+     * Equip an armor item
+     */
+    equipArmor: (state, action: PayloadAction<{ item: EquipmentItem }>) => {
+      state.equipment.armor = action.payload.item;
+    },
+    /**
+     * Unequip armor
+     */
+    unequipArmor: (state) => {
+      state.equipment.armor = null;
+    },
+    /**
+     * Add a consumable item to a specific slot (0-2)
+     */
+    addConsumable: (state, action: PayloadAction<{ item: ConsumableItem; slot: number }>) => {
+      const { item, slot } = action.payload;
+      if (slot >= 0 && slot < 3) {
+        state.equipment.consumables[slot] = item;
+      }
+    },
+    /**
+     * Remove a consumable item from a specific slot (0-2)
+     */
+    removeConsumable: (state, action: PayloadAction<{ slot: number }>) => {
+      const { slot } = action.payload;
+      if (slot >= 0 && slot < 3) {
+        state.equipment.consumables[slot] = null;
+      }
+    },
   },
 });
 
-export const { movePlayer, movePlayerBy, damagePlayer } = playerSlice.actions;
+export const { 
+  movePlayer, 
+  movePlayerBy, 
+  damagePlayer, 
+  healPlayer,
+  equipArmor,
+  unequipArmor,
+  addConsumable,
+  removeConsumable,
+} = playerSlice.actions;
 export default playerSlice.reducer;
