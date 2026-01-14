@@ -8,6 +8,7 @@ import { GameController, GAME_ACTIVE_CONTEXT, GameOutputChannels } from "../game
 import { GameDocumentProvider } from "../gameDocumentProvider";
 import { PlayerTreeProvider } from "../playerTreeProvider";
 import { EquipmentTreeProvider } from "../equipmentTreeProvider";
+import { InventoryTreeProvider } from "../inventoryTreeProvider";
 import { CursorLocationTreeProvider } from "../cursorLocationTreeProvider";
 
 // Store selection change listeners so tests can trigger them
@@ -120,6 +121,7 @@ describe("GameController", () => {
   let documentProvider: GameDocumentProvider;
   let playerTreeProvider: PlayerTreeProvider;
   let equipmentTreeProvider: EquipmentTreeProvider;
+  let inventoryTreeProvider: InventoryTreeProvider;
   let cursorLocationTreeProvider: CursorLocationTreeProvider;
   let mockOutputChannels: GameOutputChannels;
 
@@ -135,6 +137,7 @@ describe("GameController", () => {
     documentProvider = new GameDocumentProvider();
     playerTreeProvider = new PlayerTreeProvider();
     equipmentTreeProvider = new EquipmentTreeProvider();
+    inventoryTreeProvider = new InventoryTreeProvider();
     cursorLocationTreeProvider = new CursorLocationTreeProvider();
     mockOutputChannels = createMockOutputChannels();
     controller = new GameController(
@@ -142,6 +145,7 @@ describe("GameController", () => {
       documentProvider,
       playerTreeProvider,
       equipmentTreeProvider,
+      inventoryTreeProvider,
       cursorLocationTreeProvider,
       mockOutputChannels
     );

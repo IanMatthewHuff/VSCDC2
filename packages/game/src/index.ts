@@ -20,7 +20,13 @@ import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
 import { createGoblin, resetEnemyIdCounter } from "./enemies";
 import { processAllEnemyTurns } from "./enemyAI";
-import { createHealingPotion, resetItemIdCounter } from "./items";
+import { 
+  createHealingPotion, 
+  createIronSword, 
+  createChainMailArmor, 
+  createBasicClub, 
+  resetItemIdCounter 
+} from "./items";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -44,6 +50,7 @@ export type {
   EquipmentItem,
   PlayerEquipment,
 } from "@vscdc/engine";
+export { EquipmentSlotEnum, ItemTypeEnum } from "@vscdc/engine";
 
 // Re-export NPC and dialog types
 export { createSage, initializeNPCDialogs } from "./npcs";
@@ -67,6 +74,10 @@ export {
   createHealingPotion,
   createLeatherArmor,
   createIronSword,
+  createIronHelmet,
+  createWoodenShield,
+  createChainMailArmor,
+  createBasicClub,
 } from "./items";
 
 /** Verify engine dependency is working */
@@ -216,10 +227,30 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   const lava = createLavaEnvironment({ x: 4, y: 1 });
   engine.addEnvironment(lava);
 
+  // Add starting equipment to the player
+  // Chain mail armor equipped
+  const chainMail = createChainMailArmor();
+  engine.equipArmorItem(chainMail);
+
+  // Basic club equipped in right hand
+  const club = createBasicClub();
+  engine.equipRightArmItem(club);
+
   // Add some starting items to the player's consumable slots
   // Add a healing potion to slot 0
   const healingPotion = createHealingPotion();
   engine.addConsumableItem(healingPotion, 0);
+
+  // Add items to inventory
+  // Iron sword (unequipped)
+  const ironSword = createIronSword();
+  engine.addToInventory(ironSword);
+
+  // Two healing potions (unequipped)
+  const inventoryPotion1 = createHealingPotion();
+  const inventoryPotion2 = createHealingPotion();
+  engine.addToInventory(inventoryPotion1);
+  engine.addToInventory(inventoryPotion2);
 
   /**
    * Attempts to move the player by the given offset.

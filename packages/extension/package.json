@@ -46,17 +46,17 @@
       },
       {
         "command": "vscdc.useConsumable0",
-        "title": "Use Consumable Slot 1",
+        "title": "Use",
         "category": "Dungeon Crawler"
       },
       {
         "command": "vscdc.useConsumable1",
-        "title": "Use Consumable Slot 2",
+        "title": "Use",
         "category": "Dungeon Crawler"
       },
       {
         "command": "vscdc.useConsumable2",
-        "title": "Use Consumable Slot 3",
+        "title": "Use",
         "category": "Dungeon Crawler"
       },
       {
@@ -74,6 +74,24 @@
       {
         "command": "vscdc.removeConsumable2",
         "title": "Remove Consumable Slot 3",
+        "category": "Dungeon Crawler",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "vscdc.equipItem",
+        "title": "Equip",
+        "category": "Dungeon Crawler",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "vscdc.equipToConsumableSlot",
+        "title": "Equip to Slot",
+        "category": "Dungeon Crawler",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "vscdc.dropItem",
+        "title": "Drop",
         "category": "Dungeon Crawler",
         "icon": "$(trash)"
       }
@@ -142,6 +160,11 @@
           "when": "vscdc.gameActive"
         },
         {
+          "id": "vscdc.inventoryView",
+          "name": "Inventory",
+          "when": "vscdc.gameActive"
+        },
+        {
           "id": "vscdc.cursorLocationView",
           "name": "Current Location",
           "when": "vscdc.gameActive"
@@ -178,6 +201,21 @@
         {
           "command": "vscdc.removeConsumable2",
           "when": "view == vscdc.equipmentView && viewItem == consumableSlot2",
+          "group": "inline@2"
+        },
+        {
+          "command": "vscdc.equipItem",
+          "when": "view == vscdc.inventoryView && viewItem =~ /^inventoryEquipment_/",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscdc.equipToConsumableSlot",
+          "when": "view == vscdc.inventoryView && viewItem == inventoryConsumable",
+          "group": "inline@1"
+        },
+        {
+          "command": "vscdc.dropItem",
+          "when": "view == vscdc.inventoryView && viewItem =~ /^inventory(Equipment|Consumable)/",
           "group": "inline@2"
         }
       ]

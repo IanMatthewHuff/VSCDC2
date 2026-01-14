@@ -54,7 +54,7 @@ describe("items", () => {
       expect(sword.id).toBe("iron_sword_1");
       expect(sword.name).toBe("Iron Sword");
       expect(sword.type).toBe(ItemTypeEnum.Equipment);
-      expect(sword.slot).toBe(EquipmentSlotEnum.Armor);
+      expect(sword.slot).toBe(EquipmentSlotEnum.RightArm);
       expect(sword.description).toBe("A sturdy iron blade");
       expect(sword.attack).toBe(2);
       expect(sword.defense).toBeUndefined();

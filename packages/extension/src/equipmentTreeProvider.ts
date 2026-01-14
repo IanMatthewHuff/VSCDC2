@@ -53,8 +53,20 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
     }
 
     if (!element) {
-      // Root level: show armor and consumable slots
+      // Root level: show equipment slots and consumable slots
       const items: EquipmentItem[] = [];
+
+      // Head slot
+      const headValue = this.equipment.head?.name || "Empty";
+      items.push(
+        new EquipmentItem(
+          "Head",
+          headValue,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("copilot"),
+          "equipmentSlot"
+        )
+      );
 
       // Armor slot
       const armorValue = this.equipment.armor?.name || "Empty";
@@ -64,6 +76,30 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
           armorValue,
           vscode.TreeItemCollapsibleState.None,
           new vscode.ThemeIcon("shield"),
+          "equipmentSlot"
+        )
+      );
+
+      // Left Arm slot (shield)
+      const leftArmValue = this.equipment.leftArm?.name || "Empty";
+      items.push(
+        new EquipmentItem(
+          "Left Arm",
+          leftArmValue,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("shield"),
+          "equipmentSlot"
+        )
+      );
+
+      // Right Arm slot (weapon)
+      const rightArmValue = this.equipment.rightArm?.name || "Empty";
+      items.push(
+        new EquipmentItem(
+          "Right Arm",
+          rightArmValue,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("sword"),
           "equipmentSlot"
         )
       );

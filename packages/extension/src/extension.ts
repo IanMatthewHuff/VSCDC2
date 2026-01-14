@@ -11,6 +11,7 @@ import { GameController, GameOutputChannels } from "./gameController";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 import { EquipmentTreeProvider } from "./equipmentTreeProvider";
+import { InventoryTreeProvider } from "./inventoryTreeProvider";
 
 let gameController: GameController | undefined;
 let outputChannels: GameOutputChannels | undefined;
@@ -61,12 +62,20 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(cursorLocationTreeProvider);
 
+  // Create the inventory tree provider
+  const inventoryTreeProvider = new InventoryTreeProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("vscdc.inventoryView", inventoryTreeProvider)
+  );
+  context.subscriptions.push(inventoryTreeProvider);
+
   // Create the game controller
   gameController = new GameController(
     context,
     documentProvider,
     playerTreeProvider,
     equipmentTreeProvider,
+    inventoryTreeProvider,
     cursorLocationTreeProvider,
     outputChannels
   );
@@ -142,6 +151,24 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("vscdc.removeConsumable2", () => {
       gameController?.removeConsumable(2);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.equipItem", (item) => {
+      gameController?.equipItem(item);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.equipToConsumableSlot", async (item) => {
+      await gameController?.equipToConsumableSlot(item);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.dropItem", async (item) => {
+      await gameController?.dropItem(item);
     })
   );
 

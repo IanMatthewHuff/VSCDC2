@@ -32,7 +32,7 @@ export type {
   EquipmentSlot,
   PlayerEquipment,
 } from "./types";
-export { ItemType as ItemTypeEnum, EquipmentSlot as EquipmentSlotEnum } from "./types";
+export { ItemType as ItemTypeEnum, EquipmentSlot as EquipmentSlotEnum, DEFAULT_INVENTORY_CAPACITY } from "./types";
 export type { CreateStoreOptions } from "./store";
 export { GameEventType } from "./events";
 export type {
@@ -56,6 +56,15 @@ export {
   healPlayer,
   equipArmor,
   unequipArmor,
+  equipHead,
+  unequipHead,
+  equipLeftArm,
+  unequipLeftArm,
+  equipRightArm,
+  unequipRightArm,
+  addToInventory,
+  removeFromInventory,
+  setInventoryCapacity,
   addConsumable,
   removeConsumable,
 } from "./playerSlice";

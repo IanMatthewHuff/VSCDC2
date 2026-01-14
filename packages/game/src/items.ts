@@ -50,11 +50,42 @@ export function createLeatherArmor(): EquipmentItem {
 }
 
 /**
- * Creates a basic iron sword equipment item
- * Provides +2 attack when equipped
+ * Creates an iron helmet equipment item
+ * Provides +1 defense when equipped to the head slot
  * 
- * Note: Currently using armor slot since we only have one equipment slot.
- * In the future, this should use a weapon-specific slot.
+ * @returns A new iron helmet equipment item
+ */
+export function createIronHelmet(): EquipmentItem {
+  return {
+    id: generateItemId("iron_helmet"),
+    name: "Iron Helmet",
+    type: ItemTypeEnum.Equipment,
+    slot: EquipmentSlotEnum.Head,
+    description: "A sturdy iron helmet",
+    defense: 1,
+  };
+}
+
+/**
+ * Creates a wooden shield equipment item
+ * Provides +1 defense when equipped to the left arm slot
+ * 
+ * @returns A new wooden shield equipment item
+ */
+export function createWoodenShield(): EquipmentItem {
+  return {
+    id: generateItemId("wooden_shield"),
+    name: "Wooden Shield",
+    type: ItemTypeEnum.Equipment,
+    slot: EquipmentSlotEnum.LeftArm,
+    description: "A basic wooden shield",
+    defense: 1,
+  };
+}
+
+/**
+ * Creates a basic iron sword equipment item
+ * Provides +2 attack when equipped to the right arm slot
  * 
  * @returns A new iron sword equipment item
  */
@@ -63,9 +94,43 @@ export function createIronSword(): EquipmentItem {
     id: generateItemId("iron_sword"),
     name: "Iron Sword",
     type: ItemTypeEnum.Equipment,
-    slot: EquipmentSlotEnum.Armor, // TODO: Create weapon slot
+    slot: EquipmentSlotEnum.RightArm,
     description: "A sturdy iron blade",
     attack: 2,
+  };
+}
+
+/**
+ * Creates a chain mail armor equipment item
+ * Provides +2 defense when equipped
+ * 
+ * @returns A new chain mail armor equipment item
+ */
+export function createChainMailArmor(): EquipmentItem {
+  return {
+    id: generateItemId("chain_mail"),
+    name: "Chain Mail",
+    type: ItemTypeEnum.Equipment,
+    slot: EquipmentSlotEnum.Armor,
+    description: "Interlocking metal rings provide solid protection",
+    defense: 2,
+  };
+}
+
+/**
+ * Creates a basic club equipment item
+ * Provides +1 attack when equipped to the right arm slot
+ * 
+ * @returns A new basic club equipment item
+ */
+export function createBasicClub(): EquipmentItem {
+  return {
+    id: generateItemId("basic_club"),
+    name: "Basic Club",
+    type: ItemTypeEnum.Equipment,
+    slot: EquipmentSlotEnum.RightArm,
+    description: "A simple wooden club",
+    attack: 1,
   };
 }
 

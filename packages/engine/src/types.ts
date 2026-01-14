@@ -23,6 +23,9 @@ export interface Stat {
  */
 export enum EquipmentSlot {
   Armor = "armor",
+  Head = "head",
+  LeftArm = "leftArm",
+  RightArm = "rightArm",
 }
 
 /**
@@ -81,9 +84,18 @@ export interface EquipmentItem extends Item {
 export interface PlayerEquipment {
   /** Equipped armor item, if any */
   armor: EquipmentItem | null;
+  /** Equipped head item, if any */
+  head: EquipmentItem | null;
+  /** Equipped left arm item (shield), if any */
+  leftArm: EquipmentItem | null;
+  /** Equipped right arm item (weapon), if any */
+  rightArm: EquipmentItem | null;
   /** Consumable items in quick slots (max 3) */
   consumables: (ConsumableItem | null)[];
 }
+
+/** Default inventory capacity */
+export const DEFAULT_INVENTORY_CAPACITY = 20;
 
 /**
  * Represents the player character
@@ -97,6 +109,10 @@ export interface Player {
   health: Stat;
   /** Player's equipment */
   equipment: PlayerEquipment;
+  /** Player's inventory of unequipped items */
+  inventory: (EquipmentItem | ConsumableItem)[];
+  /** Maximum inventory capacity */
+  inventoryCapacity: number;
   /** Base attack value (before equipment bonuses) */
   baseAttack: number;
   /** Base defense value (before equipment bonuses) */

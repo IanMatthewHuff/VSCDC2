@@ -12,6 +12,15 @@ import {
   healPlayer,
   equipArmor,
   unequipArmor,
+  equipHead,
+  unequipHead,
+  equipLeftArm,
+  unequipLeftArm,
+  equipRightArm,
+  unequipRightArm,
+  addToInventory,
+  removeFromInventory,
+  setInventoryCapacity,
   addConsumable,
   removeConsumable,
 } from "./playerSlice";
@@ -160,7 +169,10 @@ export class GameEngine {
   public getPlayerAttack(): number {
     const player = this.store.getState().player;
     const armorBonus = player.equipment.armor?.attack || 0;
-    return player.baseAttack + armorBonus;
+    const headBonus = player.equipment.head?.attack || 0;
+    const leftArmBonus = player.equipment.leftArm?.attack || 0;
+    const rightArmBonus = player.equipment.rightArm?.attack || 0;
+    return player.baseAttack + armorBonus + headBonus + leftArmBonus + rightArmBonus;
   }
 
   /**
@@ -169,7 +181,10 @@ export class GameEngine {
   public getPlayerDefense(): number {
     const player = this.store.getState().player;
     const armorBonus = player.equipment.armor?.defense || 0;
-    return player.baseDefense + armorBonus;
+    const headBonus = player.equipment.head?.defense || 0;
+    const leftArmBonus = player.equipment.leftArm?.defense || 0;
+    const rightArmBonus = player.equipment.rightArm?.defense || 0;
+    return player.baseDefense + armorBonus + headBonus + leftArmBonus + rightArmBonus;
   }
 
   /**
@@ -191,6 +206,100 @@ export class GameEngine {
    */
   public unequipArmorItem(): void {
     this.store.dispatch(unequipArmor());
+  }
+
+  /**
+   * Equip a head item
+   */
+  public equipHeadItem(item: EquipmentItem): void {
+    this.store.dispatch(equipHead({ item }));
+  }
+
+  /**
+   * Unequip the current head item
+   */
+  public unequipHeadItem(): void {
+    this.store.dispatch(unequipHead());
+  }
+
+  /**
+   * Equip a left arm item (shield)
+   */
+  public equipLeftArmItem(item: EquipmentItem): void {
+    this.store.dispatch(equipLeftArm({ item }));
+  }
+
+  /**
+   * Unequip the current left arm item
+   */
+  public unequipLeftArmItem(): void {
+    this.store.dispatch(unequipLeftArm());
+  }
+
+  /**
+   * Equip a right arm item (weapon)
+   */
+  public equipRightArmItem(item: EquipmentItem): void {
+    this.store.dispatch(equipRightArm({ item }));
+  }
+
+  /**
+   * Unequip the current right arm item
+   */
+  public unequipRightArmItem(): void {
+    this.store.dispatch(unequipRightArm());
+  }
+
+  // ============================================
+  // Inventory Management
+  // ============================================
+
+  /**
+   * Get the player's inventory
+   */
+  public getInventory(): (EquipmentItem | ConsumableItem)[] {
+    return this.store.getState().player.inventory;
+  }
+
+  /**
+   * Get the player's inventory capacity
+   */
+  public getInventoryCapacity(): number {
+    return this.store.getState().player.inventoryCapacity;
+  }
+
+  /**
+   * Check if the inventory is full
+   */
+  public isInventoryFull(): boolean {
+    const player = this.store.getState().player;
+    return player.inventory.length >= player.inventoryCapacity;
+  }
+
+  /**
+   * Add an item to the player's inventory
+   * @returns true if added successfully, false if inventory is full
+   */
+  public addToInventory(item: EquipmentItem | ConsumableItem): boolean {
+    if (this.isInventoryFull()) {
+      return false;
+    }
+    this.store.dispatch(addToInventory({ item }));
+    return true;
+  }
+
+  /**
+   * Remove an item from the player's inventory by ID
+   */
+  public removeFromInventory(itemId: string): void {
+    this.store.dispatch(removeFromInventory({ itemId }));
+  }
+
+  /**
+   * Set the inventory capacity
+   */
+  public setInventoryCapacity(capacity: number): void {
+    this.store.dispatch(setInventoryCapacity({ capacity }));
   }
 
   /**

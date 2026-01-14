@@ -15,6 +15,10 @@ import {
   DialogNode,
   NPC,
   EnvironmentType,
+  EquipmentSlotEnum,
+  EquipmentItem as GameEquipmentItem,
+  ConsumableItem,
+  ItemTypeEnum,
 } from "@vscdc/game";
 import {
   GameEventType,
@@ -27,6 +31,7 @@ import {
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
 import { PlayerTreeProvider } from "./playerTreeProvider";
 import { EquipmentTreeProvider } from "./equipmentTreeProvider";
+import { InventoryTreeProvider, InventoryItem } from "./inventoryTreeProvider";
 import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
 
 /**
@@ -60,6 +65,7 @@ export class GameController {
   private documentProvider: GameDocumentProvider;
   private playerTreeProvider: PlayerTreeProvider;
   private equipmentTreeProvider: EquipmentTreeProvider;
+  private inventoryTreeProvider: InventoryTreeProvider;
   private cursorLocationTreeProvider: CursorLocationTreeProvider;
   private outputChannels: GameOutputChannels;
   private gameEditor: vscode.TextEditor | null = null;
@@ -74,12 +80,14 @@ export class GameController {
     documentProvider: GameDocumentProvider,
     playerTreeProvider: PlayerTreeProvider,
     equipmentTreeProvider: EquipmentTreeProvider,
+    inventoryTreeProvider: InventoryTreeProvider,
     cursorLocationTreeProvider: CursorLocationTreeProvider,
     outputChannels: GameOutputChannels
   ) {
     this.documentProvider = documentProvider;
     this.playerTreeProvider = playerTreeProvider;
     this.equipmentTreeProvider = equipmentTreeProvider;
+    this.inventoryTreeProvider = inventoryTreeProvider;
     this.cursorLocationTreeProvider = cursorLocationTreeProvider;
     this.outputChannels = outputChannels;
 
@@ -106,6 +114,10 @@ export class GameController {
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
     this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
+    this.inventoryTreeProvider.setInventory(
+      this.gameSession.engine.getInventory(),
+      this.gameSession.engine.getInventoryCapacity()
+    );
 
     // Update cursor location to initial position
     this.updateCursorLocation();
@@ -405,6 +417,7 @@ export class GameController {
     this.gameEditor = null;
     this.playerTreeProvider.setPlayerStats(null);
     this.equipmentTreeProvider.setEquipment(null);
+    this.inventoryTreeProvider.setInventory([], 20);
     this.cursorLocationTreeProvider.setLocationInfo(null);
     vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, false);
   }
@@ -637,6 +650,150 @@ export class GameController {
     this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
 
     vscode.window.showInformationMessage(`Removed consumable from slot ${slot + 1}`);
+  }
+
+  /**
+   * Equip an equipment item from inventory
+   * @param item The inventory tree item containing the equipment to equip
+   */
+  equipItem(item: InventoryItem): void {
+    if (!this.gameSession || !item.itemData) return;
+
+    const equipItem = item.itemData as GameEquipmentItem;
+    const engine = this.gameSession.engine;
+
+    // Equip to the appropriate slot based on item's slot type
+    switch (equipItem.slot) {
+      case EquipmentSlotEnum.Armor:
+        // If there's already armor equipped, move it to inventory
+        const currentArmor = engine.getPlayerEquipment().armor;
+        if (currentArmor) {
+          if (!engine.addToInventory(currentArmor)) {
+            vscode.window.showWarningMessage("Inventory is full! Cannot unequip current armor.");
+            return;
+          }
+        }
+        engine.removeFromInventory(equipItem.id);
+        engine.equipArmorItem(equipItem);
+        break;
+      case EquipmentSlotEnum.Head:
+        const currentHead = engine.getPlayerEquipment().head;
+        if (currentHead) {
+          if (!engine.addToInventory(currentHead)) {
+            vscode.window.showWarningMessage("Inventory is full! Cannot unequip current helmet.");
+            return;
+          }
+        }
+        engine.removeFromInventory(equipItem.id);
+        engine.equipHeadItem(equipItem);
+        break;
+      case EquipmentSlotEnum.LeftArm:
+        const currentLeftArm = engine.getPlayerEquipment().leftArm;
+        if (currentLeftArm) {
+          if (!engine.addToInventory(currentLeftArm)) {
+            vscode.window.showWarningMessage("Inventory is full! Cannot unequip current left arm item.");
+            return;
+          }
+        }
+        engine.removeFromInventory(equipItem.id);
+        engine.equipLeftArmItem(equipItem);
+        break;
+      case EquipmentSlotEnum.RightArm:
+        const currentRightArm = engine.getPlayerEquipment().rightArm;
+        if (currentRightArm) {
+          if (!engine.addToInventory(currentRightArm)) {
+            vscode.window.showWarningMessage("Inventory is full! Cannot unequip current right arm item.");
+            return;
+          }
+        }
+        engine.removeFromInventory(equipItem.id);
+        engine.equipRightArmItem(equipItem);
+        break;
+    }
+
+    // Update UI
+    this.equipmentTreeProvider.setEquipment(engine.getPlayerEquipment());
+    this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
+    vscode.window.showInformationMessage(`Equipped ${equipItem.name}`);
+  }
+
+  /**
+   * Equip a consumable item to a quick slot
+   * @param item The inventory tree item containing the consumable to equip
+   */
+  async equipToConsumableSlot(item: InventoryItem): Promise<void> {
+    if (!this.gameSession || !item.itemData) return;
+
+    const consumable = item.itemData as ConsumableItem;
+    const engine = this.gameSession.engine;
+    const equipment = engine.getPlayerEquipment();
+
+    // Show quick pick to select which slot
+    const slotOptions = [
+      { label: "Slot 1", slot: 0, current: equipment.consumables[0]?.name || "Empty" },
+      { label: "Slot 2", slot: 1, current: equipment.consumables[1]?.name || "Empty" },
+      { label: "Slot 3", slot: 2, current: equipment.consumables[2]?.name || "Empty" },
+    ];
+
+    const selected = await vscode.window.showQuickPick(
+      slotOptions.map(opt => ({
+        label: opt.label,
+        description: opt.current,
+        slot: opt.slot,
+      })),
+      {
+        title: `Equip ${consumable.name} to which slot?`,
+        placeHolder: "Select a consumable slot",
+      }
+    );
+
+    if (!selected) return;
+
+    // If there's already a consumable in the slot, move it to inventory
+    const currentConsumable = equipment.consumables[selected.slot];
+    if (currentConsumable) {
+      if (!engine.addToInventory(currentConsumable)) {
+        vscode.window.showWarningMessage("Inventory is full! Cannot unequip current consumable.");
+        return;
+      }
+      engine.removeConsumableItem(selected.slot);
+    }
+
+    // Remove from inventory and equip
+    engine.removeFromInventory(consumable.id);
+    engine.addConsumableItem(consumable, selected.slot);
+
+    // Update UI
+    this.equipmentTreeProvider.setEquipment(engine.getPlayerEquipment());
+    this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
+
+    vscode.window.showInformationMessage(`Equipped ${consumable.name} to slot ${selected.slot + 1}`);
+  }
+
+  /**
+   * Drop an item from inventory (removes it permanently)
+   * @param item The inventory tree item to drop
+   */
+  async dropItem(item: InventoryItem): Promise<void> {
+    if (!this.gameSession || !item.itemData) return;
+
+    const confirmDrop = await vscode.window.showWarningMessage(
+      `Are you sure you want to drop ${item.itemData.name}? This cannot be undone.`,
+      { modal: true },
+      "Drop"
+    );
+
+    if (confirmDrop !== "Drop") return;
+
+    const engine = this.gameSession.engine;
+    engine.removeFromInventory(item.itemData.id);
+
+    // Update UI
+    this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
+
+    vscode.window.showInformationMessage(`Dropped ${item.itemData.name}`);
   }
 
   dispose(): void {

@@ -72,6 +72,9 @@ describe("EquipmentTreeProvider", () => {
 
     return {
       armor,
+      head: null,
+      leftArm: null,
+      rightArm: null,
       consumables: [potion1, null, potion2],
     };
   }
@@ -88,9 +91,10 @@ describe("EquipmentTreeProvider", () => {
     provider.setEquipment(equipment);
 
     const children = await provider.getChildren();
-    expect(children.length).toBe(4); // 1 armor + 3 consumable slots
+    expect(children.length).toBe(7); // 4 equipment slots + 3 consumable slots
 
-    const armorItem = children[0];
+    // Head is first, Armor is second
+    const armorItem = children[1];
     expect(armorItem.label).toBe("Armor");
     expect(armorItem.description).toBe("Test Armor");
   });
@@ -99,12 +103,16 @@ describe("EquipmentTreeProvider", () => {
     const provider = new EquipmentTreeProvider();
     const equipment: PlayerEquipment = {
       armor: null,
+      head: null,
+      leftArm: null,
+      rightArm: null,
       consumables: [null, null, null],
     };
     provider.setEquipment(equipment);
 
     const children = await provider.getChildren();
-    const armorItem = children[0];
+    // Head is at index 0, Armor is at index 1
+    const armorItem = children[1];
     expect(armorItem.label).toBe("Armor");
     expect(armorItem.description).toBe("Empty");
   });
@@ -116,15 +124,16 @@ describe("EquipmentTreeProvider", () => {
 
     const children = await provider.getChildren();
     
-    const slot1 = children[1];
+    // Consumable slots start at index 4 (after Head, Armor, Left Arm, Right Arm)
+    const slot1 = children[4];
     expect(slot1.label).toBe("Slot 1");
     expect(slot1.description).toBe("Test Potion");
 
-    const slot2 = children[2];
+    const slot2 = children[5];
     expect(slot2.label).toBe("Slot 2");
     expect(slot2.description).toBe("Empty");
 
-    const slot3 = children[3];
+    const slot3 = children[6];
     expect(slot3.label).toBe("Slot 3");
     expect(slot3.description).toBe("Test Potion 2");
   });
@@ -136,13 +145,14 @@ describe("EquipmentTreeProvider", () => {
 
     const children = await provider.getChildren();
     
-    const slot1 = children[1];
+    // Consumable slots start at index 4
+    const slot1 = children[4];
     expect(slot1.contextValue).toBe("consumableSlot0");
 
-    const slot2 = children[2];
+    const slot2 = children[5];
     expect(slot2.contextValue).toBeUndefined(); // Empty slot
 
-    const slot3 = children[3];
+    const slot3 = children[6];
     expect(slot3.contextValue).toBe("consumableSlot2");
   });
 
