@@ -141,6 +141,8 @@ export interface GameSession {
   useConsumable: (slot: number) => void;
   /** Remove a consumable item from a specific slot (0-2) */
   removeConsumable: (slot: number) => void;
+  /** Called after equipment changes to advance world state (triggers enemy turns) */
+  onEquipmentChanged: () => void;
 }
 
 // ============================================
@@ -159,6 +161,7 @@ function generateEntityId(prefix: string): string {
 /**
  * Creates a target dummy enemy at the specified position
  * Target dummies are stationary enemies used for testing combat
+ * HP 6, Attack 0, Defense 1
  * 
  * @param position The position to place the target dummy
  * @returns A new target dummy enemy entity
@@ -171,7 +174,9 @@ export function createTargetDummy(position: Position): Enemy {
     position: { ...position },
     displayChar: "D",
     color: "brown",
-    health: { current: 3, max: 3 },
+    health: { current: 6, max: 6 },
+    attack: 0,
+    defense: 1,
   };
 }
 
@@ -397,6 +402,14 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
     engine.removeConsumableItem(slot);
   }
 
+  /**
+   * Called after any equipment change to advance the game world.
+   * Equipment changes count as a player action, giving enemies a turn to respond.
+   */
+  function onEquipmentChanged(): void {
+    processAllEnemyTurns(engine, level);
+  }
+
   return {
     engine,
     level,
@@ -410,5 +423,6 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
     getEnvironmentAt,
     useConsumable,
     removeConsumable,
+    onEquipmentChanged,
   };
 }

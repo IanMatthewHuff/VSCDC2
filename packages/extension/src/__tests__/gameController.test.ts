@@ -112,6 +112,7 @@ function createMockOutputChannels(): GameOutputChannels {
     gameLog: createMockOutputChannel(),
     combatLog: createMockOutputChannel(),
     dialogLog: createMockOutputChannel(),
+    otherLog: createMockOutputChannel(),
   };
 }
 
@@ -460,12 +461,12 @@ describe("GameController", () => {
       expect(locationInfo).not.toBeNull();
       expect(locationInfo?.entities.length).toBeGreaterThan(0);
 
-      // Entity should have health info
+      // Entity should have health info (Target Dummy has HP 6)
       const entity = locationInfo?.entities[0];
       expect(entity?.name).toBe("Target Dummy");
       expect(entity?.health).toBeDefined();
-      expect(entity?.health.current).toBe(3);
-      expect(entity?.health.max).toBe(3);
+      expect(entity?.health.current).toBe(6);
+      expect(entity?.health.max).toBe(6);
     });
   });
 });

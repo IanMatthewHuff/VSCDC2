@@ -85,7 +85,7 @@ describe("EquipmentTreeProvider", () => {
     expect(children).toEqual([]);
   });
 
-  it("shows armor slot", async () => {
+  it("shows armor slot with stats", async () => {
     const provider = new EquipmentTreeProvider();
     const equipment = createTestEquipment();
     provider.setEquipment(equipment);
@@ -96,7 +96,7 @@ describe("EquipmentTreeProvider", () => {
     // Head is first, Armor is second
     const armorItem = children[1];
     expect(armorItem.label).toBe("Armor");
-    expect(armorItem.description).toBe("Test Armor");
+    expect(armorItem.description).toBe("Test Armor (+2 DEF)");
   });
 
   it("shows empty armor slot", async () => {

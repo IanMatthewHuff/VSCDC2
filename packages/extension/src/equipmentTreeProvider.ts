@@ -3,7 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import { PlayerEquipment } from "@vscdc/game";
+import { PlayerEquipment, EquipmentItem as GameEquipmentItem } from "@vscdc/game";
 
 /**
  * Tree item representing an equipment slot or item
@@ -57,7 +57,8 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
       const items: EquipmentItem[] = [];
 
       // Head slot
-      const headValue = this.equipment.head?.name || "Empty";
+      const headItem = this.equipment.head;
+      const headValue = this.formatEquipmentValue(headItem);
       items.push(
         new EquipmentItem(
           "Head",
@@ -69,7 +70,8 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
       );
 
       // Armor slot
-      const armorValue = this.equipment.armor?.name || "Empty";
+      const armorItem = this.equipment.armor;
+      const armorValue = this.formatEquipmentValue(armorItem);
       items.push(
         new EquipmentItem(
           "Armor",
@@ -81,7 +83,8 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
       );
 
       // Left Arm slot (shield)
-      const leftArmValue = this.equipment.leftArm?.name || "Empty";
+      const leftArmItem = this.equipment.leftArm;
+      const leftArmValue = this.formatEquipmentValue(leftArmItem);
       items.push(
         new EquipmentItem(
           "Left Arm",
@@ -93,7 +96,8 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
       );
 
       // Right Arm slot (weapon)
-      const rightArmValue = this.equipment.rightArm?.name || "Empty";
+      const rightArmItem = this.equipment.rightArm;
+      const rightArmValue = this.formatEquipmentValue(rightArmItem);
       items.push(
         new EquipmentItem(
           "Right Arm",
@@ -126,6 +130,31 @@ export class EquipmentTreeProvider implements vscode.TreeDataProvider<EquipmentI
     }
 
     return Promise.resolve([]);
+  }
+
+  /**
+   * Format the display value for an equipment slot, including stats
+   */
+  private formatEquipmentValue(item: GameEquipmentItem | null): string {
+    if (!item) {
+      return "Empty";
+    }
+    const stats = this.getEquipmentStats(item);
+    return stats ? `${item.name} (${stats})` : item.name;
+  }
+
+  /**
+   * Get stats string for equipment item (e.g., "+1 ATK, +2 DEF")
+   */
+  private getEquipmentStats(item: GameEquipmentItem): string {
+    const stats: string[] = [];
+    if (item.attack) {
+      stats.push(`+${item.attack} ATK`);
+    }
+    if (item.defense) {
+      stats.push(`+${item.defense} DEF`);
+    }
+    return stats.join(", ");
   }
 
   dispose(): void {

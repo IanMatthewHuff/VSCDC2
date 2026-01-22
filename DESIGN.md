@@ -244,17 +244,29 @@ We're using **Redux Toolkit** for state management in the engine.
 
 This gives us a solid foundation for the turn-based roguelike while keeping complexity minimal.
 
-### 5.3 Map Representation
+### 5.3 Combat System — DECIDED: Attack vs Defense Formula
+
+Combat uses a stat-based damage formula: `damage = attacker_attack - defender_defense` (minimum 0)
+
+See `packages/engine/DESIGN.md` for implementation details and `packages/game/DESIGN.md` for enemy stats and balance.
+
+### 5.4 Logging System — DECIDED: Four Channels
+
+Game events are logged to four VS Code output channels: Combat, Dialog, Other, and a combined Game Log.
+
+See `packages/extension/DESIGN.md` for implementation details.
+
+### 5.5 Map Representation
 - 2D array of tiles (simple, fast)
 - Each tile has: terrain type, entity references, item stack
 - Fog of war as separate visibility layer
 
-### 5.4 Save/Load Strategy
+### 5.6 Save/Load Strategy
 - Serialize full game state to JSON
 - Store in VS Code's `globalState` or workspace storage
 - One save slot per workspace? Multiple save slots?
 
-### 5.5 Content Loading
+### 5.7 Content Loading
 - Bundled with extension (simplest)
 - External content packs (future expansion)
 - Consider validation schema for content files

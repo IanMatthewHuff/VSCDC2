@@ -29,15 +29,16 @@ Entity definitions for enemies and NPCs:
 
 **Enemies**:
 - **Target Dummy**: Training entity at position (2,2)
-  - 3 HP, can be attacked and destroyed
+  - HP 6, Attack 0, Defense 1
   - Display character: "D", color: brown
   - Stationary (does not move or attack)
   - Used for testing combat mechanics
 
 - **Goblin**: Active enemy that moves and attacks
-  - 3 HP, display character: "G", color: green
+  - HP 5, Attack 3, Defense 0
+  - Display character: "G", color: green
   - Moves greedily toward player using Manhattan distance
-  - Attacks player when adjacent (1 damage per turn)
+  - Attacks player when adjacent (damage calculated via combat formula)
   - Avoids damaging environments (e.g., lava)
   - Added to level when `createGame({ includeEnemies: true })`
   - Default position: (1, 1) in test level
@@ -91,20 +92,33 @@ The enemy AI system handles autonomous enemy behavior during combat:
 ### Combat Rules
 **Status: Implemented**
 
-Turn-based combat system with player and enemy actions:
+Turn-based combat system using the engine's stat-based damage formula:
+
+**Damage Formula** (implemented in engine):
+`damage = attacker_attack - defender_defense` (minimum 0)
 
 **Player Combat**:
 - **Bump-to-attack**: Moving onto an enemy's tile triggers combat
-- **Fixed damage**: Player deals 1 HP per attack
+- **Stat-based damage**: Player's total attack (base + equipment) minus enemy defense
 - **Entity removal**: Entities are removed when health reaches 0
 - **Combat events**: All combat actions are logged via event system
 
+**Starting Player Stats** (with default equipment):
+- Base Attack: 1, Base Defense: 0
+- Starting equipment: Chain Mail (+2 def), Basic Club (+1 atk)
+- **Effective totals**: Attack 2, Defense 2
+
 **Enemy Combat**:
 - **Autonomous behavior**: Enemies act automatically after player actions
-- **Adjacent attacks**: Enemies attack when next to the player (Manhattan distance = 1)
+- **Stat-based damage**: Enemy attack minus player's total defense
 - **Turn-based**: Each enemy gets one action per player action
 - **AI-driven movement**: Enemies use greedy pathfinding to approach player
 - **Environmental awareness**: Enemies avoid hazardous tiles
+
+**Balance Examples**:
+- Goblin (Atk 3) vs armored player (Def 2) → 1 damage per hit
+- Player (Atk 2) vs Goblin (Def 0) → 2 damage per hit, 3 hits to kill
+- Player (Atk 2) vs Target Dummy (Def 1) → 1 damage per hit, 6 hits to kill
 
 **NPC Interaction Rules**:
 - Moving onto an NPC tile triggers dialog interaction instead of combat

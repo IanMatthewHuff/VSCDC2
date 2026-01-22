@@ -195,6 +195,8 @@ Custom middleware that emits game events for UI consumption:
 - `NPC_INTERACTION`: Emitted when player interacts with an NPC
 - `ENVIRONMENT_ENTERED`: Emitted when player enters an environment
 - `ENVIRONMENT_DAMAGE`: Emitted when an environment deals damage to the player
+- `EQUIPMENT_EQUIPPED`: Emitted when equipment is equipped to a slot
+- `EQUIPMENT_UNEQUIPPED`: Emitted when equipment is removed from a slot
 
 **Event Flow**:
 1. Action dispatched to Redux store
@@ -249,3 +251,29 @@ interface Environment {
 
 ### Action System
 *Partially implemented - Direct movement methods exist, generic action system planned*
+
+### Combat System
+**Status: Implemented**
+
+The engine implements a stat-based damage formula for combat:
+
+**Damage Formula**: `damage = attacker_attack - defender_defense` (minimum 0)
+
+**Player Combat Stats**:
+- `baseAttack`: Player's base attack value (default: 1)
+- `baseDefense`: Player's base defense value (default: 0)
+- Equipment bonuses are added to base values
+- `getPlayerAttack()` and `getPlayerDefense()` return total values
+
+**Entity Combat Stats**:
+- `attack`: Optional attack stat for enemies (defaults to 0)
+- `defense`: Optional defense stat for enemies (defaults to 0)
+- `getEntityAttack(id)` and `getEntityDefense(id)` query entity stats
+
+**Combat Methods**:
+- `attack(targetId)`: Player attacks an entity, damage calculated automatically
+- `enemyAttackPlayer(attackerId)`: Enemy attacks player, damage calculated automatically
+
+**Key Behavior**:
+- High defense can completely negate weak attacks (0 damage is valid)
+- Combat events include calculated damage for UI logging

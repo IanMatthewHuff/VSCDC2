@@ -13,6 +13,8 @@ import {
   EntityDestroyedEvent,
   EnvironmentEnteredEvent,
   EnvironmentDamageEvent,
+  EquipmentEquippedEvent,
+  EquipmentUnequippedEvent,
   AnyGameEvent,
 } from "./events";
 import { selectEnvironmentAt } from "./environmentSlice";
@@ -180,6 +182,40 @@ export function createEventMiddleware(
           destroyedByName: nextState.player.name,
         };
         emitEvent(eventHandlers, destroyedEvent);
+      }
+    }
+
+    // Check for equipment changes
+    const prevEquipment = prevState.player.equipment;
+    const nextEquipment = nextState.player.equipment;
+    const slots = ["armor", "head", "leftArm", "rightArm"] as const;
+    
+    for (const slot of slots) {
+      const prevItem = prevEquipment[slot];
+      const nextItem = nextEquipment[slot];
+      
+      // Item was unequipped (had item before, doesn't now or different item)
+      if (prevItem && (!nextItem || prevItem.id !== nextItem.id)) {
+        const unequipEvent: EquipmentUnequippedEvent = {
+          type: GameEventType.EQUIPMENT_UNEQUIPPED,
+          timestamp: Date.now(),
+          itemId: prevItem.id,
+          itemName: prevItem.name,
+          slot: slot,
+        };
+        emitEvent(eventHandlers, unequipEvent);
+      }
+      
+      // Item was equipped (has item now, didn't before or different item)
+      if (nextItem && (!prevItem || prevItem.id !== nextItem.id)) {
+        const equipEvent: EquipmentEquippedEvent = {
+          type: GameEventType.EQUIPMENT_EQUIPPED,
+          timestamp: Date.now(),
+          itemId: nextItem.id,
+          itemName: nextItem.name,
+          slot: slot,
+        };
+        emitEvent(eventHandlers, equipEvent);
       }
     }
 

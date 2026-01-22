@@ -154,9 +154,11 @@ describe("GameEngine equipment", () => {
         displayChar: "E",
         color: "red",
         health: { current: 5, max: 5 },
+        attack: 5, // Attack that will deal 5 damage (5 - 0 player defense)
+        defense: 0,
       };
       engine.addEntity(testEnemy);
-      engine.enemyAttackPlayer("test_enemy", 5);
+      engine.enemyAttackPlayer("test_enemy");
 
       engine.addConsumableItem(potion, 0);
       engine.useConsumableItem(0);
@@ -203,6 +205,7 @@ describe("GameEngine equipment", () => {
       const engine = new GameEngine();
       
       // Damage player first using enemyAttackPlayer
+      // Enemy needs attack stat to deal damage with the new combat formula
       const testEnemy: any = {
         id: "test_enemy",
         name: "Test Enemy",
@@ -211,14 +214,16 @@ describe("GameEngine equipment", () => {
         displayChar: "E",
         color: "red",
         health: { current: 5, max: 5 },
+        attack: 5, // Attack that will deal 5 damage (5 - 0 player defense)
+        defense: 0,
       };
       engine.addEntity(testEnemy);
-      engine.enemyAttackPlayer("test_enemy", 5);
+      engine.enemyAttackPlayer("test_enemy");
 
       engine.healPlayerBy(3);
 
       const health = engine.getPlayerHealth();
-      expect(health.current).toBe(8);
+      expect(health.current).toBe(8); // 10 - 5 + 3 = 8
     });
 
     it("does not exceed max health when healing", () => {

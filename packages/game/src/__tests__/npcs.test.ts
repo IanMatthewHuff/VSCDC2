@@ -60,8 +60,12 @@ describe("NPC system", () => {
       const game = createGame();
       // Player starts at (3,3), Sage is at (1,2)
       // Move to (2,2) first (where target dummy is, attack it)
-      game.movePlayer(-1, -1); // attack dummy
-      game.movePlayer(-1, -1); // attack dummy
+      // Target dummy has HP 6, def 1; player has attack 2, so 1 damage per attack
+      game.movePlayer(-1, -1); // attack dummy (5 HP)
+      game.movePlayer(-1, -1); // attack dummy (4 HP)
+      game.movePlayer(-1, -1); // attack dummy (3 HP)
+      game.movePlayer(-1, -1); // attack dummy (2 HP)
+      game.movePlayer(-1, -1); // attack dummy (1 HP)
       game.movePlayer(-1, -1); // destroy dummy
       game.movePlayer(-1, -1); // move to (2,2)
       
@@ -77,8 +81,12 @@ describe("NPC system", () => {
     it("does not move player when interacting with NPC", () => {
       const game = createGame();
       // Move to position adjacent to Sage
-      game.movePlayer(-1, -1); // attack dummy
-      game.movePlayer(-1, -1); // attack dummy
+      // Target dummy has HP 6, def 1; player has attack 2, so 1 damage per attack
+      game.movePlayer(-1, -1); // attack dummy (5 HP)
+      game.movePlayer(-1, -1); // attack dummy (4 HP)
+      game.movePlayer(-1, -1); // attack dummy (3 HP)
+      game.movePlayer(-1, -1); // attack dummy (2 HP)
+      game.movePlayer(-1, -1); // attack dummy (1 HP)
       game.movePlayer(-1, -1); // destroy dummy
       game.movePlayer(-1, -1); // move to (2,2)
       const posBeforeInteraction = game.engine.getPlayerPosition();
@@ -93,8 +101,12 @@ describe("NPC system", () => {
     it("cannot attack NPCs with canBeAttacked=false", () => {
       const game = createGame();
       // Move to position adjacent to Sage
-      game.movePlayer(-1, -1); // attack dummy
-      game.movePlayer(-1, -1); // attack dummy
+      // Target dummy has HP 6, def 1; player has attack 2, so 1 damage per attack
+      game.movePlayer(-1, -1); // attack dummy (5 HP)
+      game.movePlayer(-1, -1); // attack dummy (4 HP)
+      game.movePlayer(-1, -1); // attack dummy (3 HP)
+      game.movePlayer(-1, -1); // attack dummy (2 HP)
+      game.movePlayer(-1, -1); // attack dummy (1 HP)
       game.movePlayer(-1, -1); // destroy dummy
       game.movePlayer(-1, -1); // move to (2,2)
       

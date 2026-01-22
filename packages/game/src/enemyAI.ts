@@ -41,8 +41,8 @@ export function processEnemyTurn(enemy: Enemy, engine: GameEngine, level: Level)
   // Check if player is adjacent - if so, attack
   const distanceToPlayer = manhattanDistance(currentPos, playerPos);
   if (distanceToPlayer === 1) {
-    // Attack the player (1 damage per attack)
-    engine.enemyAttackPlayer(enemy.id, 1);
+    // Attack the player (damage calculated from enemy attack vs player defense)
+    engine.enemyAttackPlayer(enemy.id);
     return;
   }
 

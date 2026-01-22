@@ -143,6 +143,10 @@ export interface CombatEntity extends Entity {
 export interface Enemy extends CombatEntity {
   /** Type identifier for the enemy */
   type: string;
+  /** Base attack value for combat */
+  attack?: number;
+  /** Base defense value for combat */
+  defense?: number;
 }
 
 /**

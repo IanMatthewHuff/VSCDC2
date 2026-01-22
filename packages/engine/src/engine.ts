@@ -188,6 +188,22 @@ export class GameEngine {
   }
 
   /**
+   * Get an entity's attack value (defaults to 0 if not set)
+   */
+  public getEntityAttack(entityId: string): number {
+    const entity = this.getEntityById(entityId);
+    return entity?.attack ?? 0;
+  }
+
+  /**
+   * Get an entity's defense value (defaults to 0 if not set)
+   */
+  public getEntityDefense(entityId: string): number {
+    const entity = this.getEntityById(entityId);
+    return entity?.defense ?? 0;
+  }
+
+  /**
    * Heal the player by the specified amount
    */
   public healPlayerBy(amount: number): void {
@@ -428,11 +444,11 @@ export class GameEngine {
 
   /**
    * Attack an entity by ID
+   * Damage is calculated as: attacker_attack - target_defense (minimum 0)
    * @param targetId The ID of the entity to attack
-   * @param damage The amount of damage to deal (default: 1)
    * @returns Result of the attack
    */
-  public attack(targetId: string, damage: number = 1): AttackResult {
+  public attack(targetId: string): AttackResult {
     const target = this.getEntityById(targetId);
 
     if (!target) {
@@ -445,6 +461,11 @@ export class GameEngine {
     }
 
     const player = this.store.getState().player;
+    
+    // Calculate damage: player attack - target defense (minimum 0)
+    const playerAttack = this.getPlayerAttack();
+    const targetDefense = this.getEntityDefense(targetId);
+    const damage = Math.max(0, playerAttack - targetDefense);
 
     // Queue the attack event before dispatching
     queueAttackEvent({
@@ -480,16 +501,21 @@ export class GameEngine {
 
   /**
    * Enemy attacks the player
+   * Damage is calculated as: attacker_attack - player_defense (minimum 0)
    * @param attackerId The ID of the attacking enemy
-   * @param damage The amount of damage to deal (default: 1)
    */
-  public enemyAttackPlayer(attackerId: string, damage: number = 1): void {
+  public enemyAttackPlayer(attackerId: string): void {
     const attacker = this.getEntityById(attackerId);
     const player = this.store.getState().player;
 
     if (!attacker) {
       return;
     }
+
+    // Calculate damage: enemy attack - player defense (minimum 0)
+    const attackerAttack = this.getEntityAttack(attackerId);
+    const playerDefense = this.getPlayerDefense();
+    const damage = Math.max(0, attackerAttack - playerDefense);
 
     // Queue the attack event
     queueAttackEvent({

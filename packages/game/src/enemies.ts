@@ -15,7 +15,7 @@ function generateEnemyId(prefix: string): string {
 
 /**
  * Creates a Goblin enemy at the specified position
- * Goblins have 3 hit points and attack by bumping into the player
+ * Goblins have 5 hit points, attack 3, defense 0, and attack by bumping into the player
  * They move greedily toward the player but avoid lava
  * 
  * @param position The position to place the Goblin
@@ -29,7 +29,9 @@ export function createGoblin(position: Position): Enemy {
     position: { ...position },
     displayChar: "G",
     color: "green",
-    health: { current: 3, max: 3 },
+    health: { current: 5, max: 5 },
+    attack: 3,
+    defense: 0,
   };
 }
 

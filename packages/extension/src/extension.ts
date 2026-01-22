@@ -20,20 +20,23 @@ export function activate(context: vscode.ExtensionContext): void {
   console.log("VS Code Dungeon Crawler extension activating...");
 
   // Create output channels for game logging
-  // Game Log shows all events, Combat and Dialog show filtered events
+  // Game Log shows all events, Combat, Dialog, and Other show filtered events
   const gameLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Game Log");
   const combatLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Combat");
   const dialogLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Dialog");
+  const otherLogChannel = vscode.window.createOutputChannel("Dungeon Crawler - Other");
   
   outputChannels = {
     gameLog: gameLogChannel,
     combatLog: combatLogChannel,
     dialogLog: dialogLogChannel,
+    otherLog: otherLogChannel,
   };
   
   context.subscriptions.push(gameLogChannel);
   context.subscriptions.push(combatLogChannel);
   context.subscriptions.push(dialogLogChannel);
+  context.subscriptions.push(otherLogChannel);
 
   // Create the document provider for the game view
   const documentProvider = new GameDocumentProvider();
@@ -184,6 +187,7 @@ export function deactivate(): void {
     outputChannels.gameLog.dispose();
     outputChannels.combatLog.dispose();
     outputChannels.dialogLog.dispose();
+    outputChannels.otherLog.dispose();
     outputChannels = undefined;
   }
 }

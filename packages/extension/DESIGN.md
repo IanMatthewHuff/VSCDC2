@@ -17,7 +17,7 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 |-----------------|------------|
 | **Text Editor** (Virtual Document) | Main game view—dungeon map, entities, NPCs |
 | **Tree View** (Sidebar) | Character stats, inventory, equipment, cursor location |
-| **Output Channels** | Game Log (all), Combat Log (attacks/damage), Dialog Log (conversations) |
+| **Output Channels** | Game Log (all), Combat Log (attacks/damage), Dialog Log (conversations), Other Log (equipment, misc) |
 | **Quick Pick** | Action menus, **NPC dialog choices** |
 | **Status Bar** | HP, dungeon level, quick stats |
 
@@ -108,13 +108,14 @@ const selected = await vscode.window.showQuickPick(items, {
 
 ## Output Channels
 
-The extension maintains three output channels for game logging:
+The extension maintains four output channels for game logging:
 
 | Channel | Purpose | Contents |
 |---------|---------|----------|
-| **Game Log** | Combined log of all events | `[Combat]` and `[Dialog]` prefixed entries |
-| **Combat Log** | Combat-specific events | Attack damage, entity deaths |
+| **Game Log** | Combined log of all events | Prefixed entries from all other channels |
+| **Combat Log** | Combat-specific events | Attack damage, entity deaths, environment damage |
 | **Dialog Log** | NPC conversation events | Dialog start/end, NPC text, player choices |
+| **Other Log** | Miscellaneous events | Equipment changes, future misc events |
 
 **Logging Implementation**:
 ```typescript
@@ -128,7 +129,17 @@ private logDialog(message: string): void {
   this.outputChannels.dialogLog.appendLine(message);
   this.outputChannels.gameLog.appendLine(`[Dialog] ${message}`);
 }
+
+private logOther(message: string): void {
+  this.outputChannels.otherLog.appendLine(message);
+  this.outputChannels.gameLog.appendLine(`[Other] ${message}`);
+}
 ```
+
+**Event Subscriptions**:
+- Combat events: `ATTACK`, `ENTITY_DESTROYED`, `ENVIRONMENT_ENTERED`, `ENVIRONMENT_DAMAGE`
+- Equipment events: `EQUIPMENT_EQUIPPED`, `EQUIPMENT_UNEQUIPPED`
+- Dialog is logged directly during NPC interaction flow
 
 ## Extension Activation
 

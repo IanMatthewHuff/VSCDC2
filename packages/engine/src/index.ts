@@ -45,6 +45,8 @@ export type {
   NPCInteractionEvent,
   EnvironmentEnteredEvent,
   EnvironmentDamageEvent,
+  EquipmentEquippedEvent,
+  EquipmentUnequippedEvent,
   AnyGameEvent,
 } from "./events";
 

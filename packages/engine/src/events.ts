@@ -11,6 +11,8 @@ export enum GameEventType {
   NPC_INTERACTION = "npc_interaction",
   ENVIRONMENT_ENTERED = "environment_entered",
   ENVIRONMENT_DAMAGE = "environment_damage",
+  EQUIPMENT_EQUIPPED = "equipment_equipped",
+  EQUIPMENT_UNEQUIPPED = "equipment_unequipped",
 }
 
 /**
@@ -107,6 +109,26 @@ export interface EnvironmentDamageEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when equipment is equipped
+ */
+export interface EquipmentEquippedEvent extends GameEvent {
+  type: GameEventType.EQUIPMENT_EQUIPPED;
+  itemId: string;
+  itemName: string;
+  slot: string;
+}
+
+/**
+ * Event emitted when equipment is unequipped
+ */
+export interface EquipmentUnequippedEvent extends GameEvent {
+  type: GameEventType.EQUIPMENT_UNEQUIPPED;
+  itemId: string;
+  itemName: string;
+  slot: string;
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -117,4 +139,6 @@ export type AnyGameEvent =
   | EntityDestroyedEvent
   | NPCInteractionEvent
   | EnvironmentEnteredEvent
-  | EnvironmentDamageEvent;
+  | EnvironmentDamageEvent
+  | EquipmentEquippedEvent
+  | EquipmentUnequippedEvent;

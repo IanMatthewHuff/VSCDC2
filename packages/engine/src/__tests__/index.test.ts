@@ -127,13 +127,14 @@ describe("GameEngine", () => {
 
     it("can attack an entity and deal damage", () => {
       const engine = new GameEngine();
+      // Player has base attack of 1, enemy has no defense, so damage = 1
       const enemy = createTestEnemy();
       engine.addEntity(enemy);
 
-      const result = engine.attack("test_enemy", 1);
+      const result = engine.attack("test_enemy");
 
       expect(result.hit).toBe(true);
-      expect(result.damage).toBe(1);
+      expect(result.damage).toBe(1); // Player attack (1) - enemy defense (0) = 1
       expect(result.targetDestroyed).toBe(false);
 
       const updatedEnemy = engine.getEntityById("test_enemy");
@@ -143,7 +144,7 @@ describe("GameEngine", () => {
     it("returns miss result when attacking non-existent entity", () => {
       const engine = new GameEngine();
 
-      const result = engine.attack("nonexistent", 1);
+      const result = engine.attack("nonexistent");
 
       expect(result.hit).toBe(false);
       expect(result.damage).toBe(0);
@@ -152,10 +153,12 @@ describe("GameEngine", () => {
 
     it("destroys entity when health reaches zero", () => {
       const engine = new GameEngine();
+      // Player has base attack of 1, enemy has no defense, so damage = 1
+      // Set enemy health to 1 so one hit destroys it
       const enemy = createTestEnemy({ health: { current: 1, max: 3 } });
       engine.addEntity(enemy);
 
-      const result = engine.attack("test_enemy", 1);
+      const result = engine.attack("test_enemy");
 
       expect(result.hit).toBe(true);
       expect(result.targetDestroyed).toBe(true);
@@ -164,10 +167,12 @@ describe("GameEngine", () => {
 
     it("destroys entity when damage exceeds remaining health", () => {
       const engine = new GameEngine();
-      const enemy = createTestEnemy({ health: { current: 2, max: 3 } });
+      // Player attack is calculated, not passed. Equip a weapon to increase attack.
+      // With higher attack, damage will exceed enemy's remaining health.
+      const enemy = createTestEnemy({ health: { current: 1, max: 3 } });
       engine.addEntity(enemy);
 
-      const result = engine.attack("test_enemy", 5);
+      const result = engine.attack("test_enemy");
 
       expect(result.targetDestroyed).toBe(true);
       expect(engine.getEntityById("test_enemy")).toBeUndefined();
@@ -179,20 +184,34 @@ describe("GameEngine", () => {
       engine.addEntity(enemy);
 
       const initialTurn = engine.getTurnCount();
-      engine.attack("test_enemy", 1);
+      engine.attack("test_enemy");
 
       expect(engine.getTurnCount()).toBe(initialTurn + 1);
     });
 
-    it("uses default damage of 1 when not specified", () => {
+    it("calculates damage from player attack minus enemy defense", () => {
       const engine = new GameEngine();
-      const enemy = createTestEnemy({ health: { current: 3, max: 3 } });
+      // Player has base attack of 1, enemy has defense of 0
+      const enemy = createTestEnemy({ health: { current: 3, max: 3 }, defense: 0 });
       engine.addEntity(enemy);
 
       engine.attack("test_enemy");
 
       const updatedEnemy = engine.getEntityById("test_enemy");
-      expect(updatedEnemy?.health.current).toBe(2);
+      expect(updatedEnemy?.health.current).toBe(2); // 3 - 1 = 2
+    });
+
+    it("deals zero damage when defense exceeds attack", () => {
+      const engine = new GameEngine();
+      // Player has base attack of 1, enemy has defense of 5
+      const enemy = createTestEnemy({ health: { current: 3, max: 3 }, defense: 5 });
+      engine.addEntity(enemy);
+
+      const result = engine.attack("test_enemy");
+
+      expect(result.damage).toBe(0);
+      const updatedEnemy = engine.getEntityById("test_enemy");
+      expect(updatedEnemy?.health.current).toBe(3); // No damage dealt
     });
   });
 
@@ -218,15 +237,15 @@ describe("GameEngine", () => {
       const attackHandler = vi.fn();
       engine.onEvent(GameEventType.ATTACK, attackHandler);
 
-      engine.attack("test_enemy", 2);
+      engine.attack("test_enemy");
 
       expect(attackHandler).toHaveBeenCalledTimes(1);
       const event = attackHandler.mock.calls[0][0] as AttackEvent;
       expect(event.type).toBe(GameEventType.ATTACK);
       expect(event.attackerName).toBe("Adventurer");
       expect(event.targetName).toBe("Test Enemy");
-      expect(event.damage).toBe(2);
-      expect(event.targetRemainingHp).toBe(1);
+      expect(event.damage).toBe(1); // Player attack (1) - enemy defense (0) = 1
+      expect(event.targetRemainingHp).toBe(2);
       expect(event.targetMaxHp).toBe(3);
     });
 
@@ -238,7 +257,7 @@ describe("GameEngine", () => {
       const destroyedHandler = vi.fn();
       engine.onEvent(GameEventType.ENTITY_DESTROYED, destroyedHandler);
 
-      engine.attack("test_enemy", 1);
+      engine.attack("test_enemy");
 
       expect(destroyedHandler).toHaveBeenCalledTimes(1);
       const event = destroyedHandler.mock.calls[0][0] as EntityDestroyedEvent;
@@ -255,7 +274,7 @@ describe("GameEngine", () => {
       const destroyedHandler = vi.fn();
       engine.onEvent(GameEventType.ENTITY_DESTROYED, destroyedHandler);
 
-      engine.attack("test_enemy", 1);
+      engine.attack("test_enemy");
 
       expect(destroyedHandler).not.toHaveBeenCalled();
     });

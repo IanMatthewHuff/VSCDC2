@@ -162,6 +162,7 @@ describe("createGame", () => {
       game.movePlayer(0, -1);
 
       // Check HP decreased
+      // Player attack (2) - target dummy defense (1) = 1 damage
       const dummyAfter = game.getEntityAt({ x: 2, y: 2 });
       expect(dummyAfter?.health.current).toBe(hpBefore - 1);
     });
@@ -171,10 +172,14 @@ describe("createGame", () => {
       const game = createGame({ excludeEnemies: true });
       game.movePlayer(-1, 0); // Move to 2,3
 
-      // Target dummy has 3 HP, attack 3 times
-      game.movePlayer(0, -1); // Attack 1
-      game.movePlayer(0, -1); // Attack 2
-      const result = game.movePlayer(0, -1); // Attack 3
+      // Target dummy has 6 HP and 1 defense, player has attack 2
+      // Each attack deals 2 - 1 = 1 damage, so 6 attacks to destroy
+      game.movePlayer(0, -1); // Attack 1 (HP: 5)
+      game.movePlayer(0, -1); // Attack 2 (HP: 4)
+      game.movePlayer(0, -1); // Attack 3 (HP: 3)
+      game.movePlayer(0, -1); // Attack 4 (HP: 2)
+      game.movePlayer(0, -1); // Attack 5 (HP: 1)
+      const result = game.movePlayer(0, -1); // Attack 6 (HP: 0, destroyed)
 
       expect(result.targetDestroyed).toBe(true);
       expect(game.getEntityAt({ x: 2, y: 2 })).toBeUndefined();
@@ -189,10 +194,13 @@ describe("createGame", () => {
       const game = createGame({ excludeEnemies: true });
       game.movePlayer(-1, 0); // Move to 2,3
 
-      // Destroy the target dummy
+      // Destroy the target dummy (6 attacks needed)
       game.movePlayer(0, -1); // Attack 1
       game.movePlayer(0, -1); // Attack 2
-      game.movePlayer(0, -1); // Attack 3 - destroyed
+      game.movePlayer(0, -1); // Attack 3
+      game.movePlayer(0, -1); // Attack 4
+      game.movePlayer(0, -1); // Attack 5
+      game.movePlayer(0, -1); // Attack 6 - destroyed
 
       // Now we can move onto that tile
       const result = game.movePlayer(0, -1);
@@ -210,7 +218,9 @@ describe("createTargetDummy", () => {
     expect(dummy.type).toBe("target_dummy");
     expect(dummy.displayChar).toBe("D");
     expect(dummy.color).toBe("brown");
-    expect(dummy.health).toEqual({ current: 3, max: 3 });
+    expect(dummy.health).toEqual({ current: 6, max: 6 });
+    expect(dummy.attack).toBe(0);
+    expect(dummy.defense).toBe(1);
     expect(dummy.position).toEqual({ x: 5, y: 5 });
   });
 

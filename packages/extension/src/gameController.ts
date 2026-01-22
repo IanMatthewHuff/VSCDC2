@@ -26,6 +26,8 @@ import {
   EntityDestroyedEvent,
   EnvironmentEnteredEvent,
   EnvironmentDamageEvent,
+  EquipmentEquippedEvent,
+  EquipmentUnequippedEvent,
   AnyGameEvent,
 } from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
@@ -49,6 +51,8 @@ export interface GameOutputChannels {
   combatLog: vscode.OutputChannel;
   /** Dialog-specific events (NPC conversations) */
   dialogLog: vscode.OutputChannel;
+  /** Other events (equipment changes, etc.) */
+  otherLog: vscode.OutputChannel;
 }
 
 /**
@@ -138,6 +142,10 @@ export class GameController {
     this.outputChannels.dialogLog.appendLine("=== Dialog Log ===");
     this.outputChannels.dialogLog.appendLine("");
 
+    this.outputChannels.otherLog.clear();
+    this.outputChannels.otherLog.appendLine("=== Other Log ===");
+    this.outputChannels.otherLog.appendLine("");
+
     // Set context to indicate game is active (must be set before revealing views
     // since views have "when": "vscdc.gameActive" condition)
     await vscode.commands.executeCommand("setContext", GAME_ACTIVE_CONTEXT, true);
@@ -188,6 +196,14 @@ export class GameController {
   }
 
   /**
+   * Log a message to the other log (and game log)
+   */
+  private logOther(message: string): void {
+    this.outputChannels.otherLog.appendLine(message);
+    this.outputChannels.gameLog.appendLine(`[Other] ${message}`);
+  }
+
+  /**
    * Subscribe to game events for combat logging
    */
   private subscribeToEvents(): void {
@@ -235,6 +251,28 @@ export class GameController {
       }
     );
     this.eventUnsubscribers.push(unsubEnvDamage);
+
+    // Subscribe to equipment equipped events
+    const unsubEquipped = engine.onEvent(
+      GameEventType.EQUIPMENT_EQUIPPED,
+      (event: AnyGameEvent) => {
+        const equipEvent = event as EquipmentEquippedEvent;
+        const message = `Equipped ${equipEvent.itemName} (${equipEvent.slot})`;
+        this.logOther(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubEquipped);
+
+    // Subscribe to equipment unequipped events
+    const unsubUnequipped = engine.onEvent(
+      GameEventType.EQUIPMENT_UNEQUIPPED,
+      (event: AnyGameEvent) => {
+        const unequipEvent = event as EquipmentUnequippedEvent;
+        const message = `Unequipped ${unequipEvent.itemName} (${unequipEvent.slot})`;
+        this.logOther(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubUnequipped);
   }
 
   /**
@@ -716,6 +754,12 @@ export class GameController {
     this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
 
+    // Equipment changes are player actions - advance the world state
+    this.gameSession.onEquipmentChanged();
+
+    // Update player stats again after enemy turns (in case player took damage)
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+
     vscode.window.showInformationMessage(`Equipped ${equipItem.name}`);
   }
 
@@ -768,6 +812,12 @@ export class GameController {
     // Update UI
     this.equipmentTreeProvider.setEquipment(engine.getPlayerEquipment());
     this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
+
+    // Equipment changes are player actions - advance the world state
+    this.gameSession.onEquipmentChanged();
+
+    // Update player stats after enemy turns (in case player took damage)
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
 
     vscode.window.showInformationMessage(`Equipped ${consumable.name} to slot ${selected.slot + 1}`);
   }
