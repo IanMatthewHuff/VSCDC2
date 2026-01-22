@@ -12,6 +12,7 @@
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
+  "browser": "./dist/web/extension.js",
   "contributes": {
     "commands": [
       {
@@ -223,8 +224,11 @@
   },
   "scripts": {
     "build": "node esbuild.config.mjs",
+    "build:web": "node esbuild.config.mjs --web",
+    "build:all": "node esbuild.config.mjs --all",
     "clean": "rm -rf dist",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "open-in-browser": "vscode-test-web --extensionDevelopmentPath=. --quality stable"
   },
   "dependencies": {
     "@vscdc/engine": "*",
@@ -234,6 +238,7 @@
     "@types/vscode": "^1.96.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-web": "^0.0.62",
     "glob": "^13.0.0"
   }
 }

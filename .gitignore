@@ -12,6 +12,7 @@ dist/
 
 # VS Code extension testing
 .vscode-test/
+.vscode-test-web/
 
 # OS files
 .DS_Store

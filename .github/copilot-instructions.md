@@ -44,6 +44,29 @@ This project has three distinct components (see DESIGN.md):
 
 Respect these boundaries when adding code.
 
+## Web Extension Compatibility
+
+This extension runs in **both VS Code Desktop and VS Code for the Web** (vscode.dev, github.dev). All code must remain web-compatible.
+
+### Prohibited APIs
+Do **not** use Node.js-specific APIs anywhere in the codebase:
+- `fs` / `fs/promises` — Use `vscode.workspace.fs` instead
+- `path` — Use `vscode.Uri` utilities or simple string manipulation
+- `child_process` — Not available in web
+- `os` — Not available in web
+- `net` / `http` / `https` — Use the Fetch API if network access is needed
+- `crypto` (Node version) — Use Web Crypto API
+- `Buffer` — Use `Uint8Array` or `TextEncoder`/`TextDecoder`
+- `process` — Limited availability; avoid relying on it
+- `__dirname` / `__filename` — Use `context.extensionUri` instead
+
+### Best Practices
+- Use VS Code's `vscode.workspace.fs` API for any file operations
+- Use `vscode.Uri` for path manipulation
+- Prefer browser-compatible npm packages (check for "browser" field in package.json)
+- Test changes in both desktop and web environments
+- See [VS Code Web Extensions Guide](https://code.visualstudio.com/api/extension-guides/web-extensions) for details
+
 ## Documentation
 
 - **Keep DESIGN.md files current** — When making design decisions during implementation, update the relevant DESIGN.md file(s)

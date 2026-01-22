@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build:web",
+      "type": "npm",
+      "script": "build:web",
+      "path": "packages/extension",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "build:all",
+      "type": "npm",
+      "script": "build:all",
+      "path": "packages/extension",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

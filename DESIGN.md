@@ -4,10 +4,13 @@
 
 A turn-based roguelike dungeon crawler game (inspired by NetHack and Rogue) that runs entirely within the VS Code editor. The game uses VS Code's native UI surfaces—text editor for the game world, tree views for character info, output panels for logs, and dialogs for interactions.
 
+**The extension runs in both VS Code Desktop and VS Code for the Web** (vscode.dev, github.dev). This was achieved by intentionally avoiding Node.js-specific APIs and using only browser-compatible dependencies.
+
 ### Core Pillars
 - **Classic roguelike gameplay**: Turn-based, procedural dungeons, permadeath, discovery through experimentation
 - **Native VS Code integration**: Feels like a natural part of the editor, not a web game embedded in it
 - **Modular architecture**: Clear separation between engine, game content, and UI presentation
+- **Web-compatible**: Runs in both desktop and web environments without platform-specific code
 
 ---
 
