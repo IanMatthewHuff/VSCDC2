@@ -1,3 +1,7 @@
+---
+applyTo: "packages/game/**/*"
+---
+
 # Copilot Instructions for Game Package
 
 > These instructions extend the repository-level rules in `/.github/copilot-instructions.md`. Read those first.
@@ -41,6 +45,6 @@ The **Game Content** package (`@vscdc/game`) contains all game-specific data, en
 <instructions>
 <instruction>
 <description>Read this file to understand the game content package's structure, content formats, and game rules when working on game content.</description>
-<file>DESIGN.md</file>
+<file>packages/game/DESIGN.md</file>
 </instruction>
 </instructions>

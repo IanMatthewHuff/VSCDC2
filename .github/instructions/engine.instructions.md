@@ -1,3 +1,7 @@
+---
+applyTo: "packages/engine/**/*"
+---
+
 # Copilot Instructions for Engine Package
 
 > These instructions extend the repository-level rules in `/.github/copilot-instructions.md`. Read those first.
@@ -40,6 +44,6 @@ The **Core Engine** (`@vscdc/engine`) is a reusable turn-based roguelike engine.
 <instructions>
 <instruction>
 <description>Read this file to understand the engine package's internal architecture, systems, and API design when working on engine code.</description>
-<file>DESIGN.md</file>
+<file>packages/engine/DESIGN.md</file>
 </instruction>
 </instructions>

@@ -1,3 +1,7 @@
+---
+applyTo: "packages/extension/**/*"
+---
+
 # Copilot Instructions for Extension Package
 
 > These instructions extend the repository-level rules in `/.github/copilot-instructions.md`. Read those first.
@@ -46,6 +50,6 @@ The **VS Code Extension** package is the UI layer that presents the game to play
 <instructions>
 <instruction>
 <description>Read this file to understand the VS Code extension's UI architecture, VS Code API usage, and rendering approach when working on extension code.</description>
-<file>DESIGN.md</file>
+<file>packages/extension/DESIGN.md</file>
 </instruction>
 </instructions>
