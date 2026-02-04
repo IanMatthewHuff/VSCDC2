@@ -28,7 +28,11 @@ import {
   EnvironmentDamageEvent,
   EquipmentEquippedEvent,
   EquipmentUnequippedEvent,
+  ExperienceGainedEvent,
+  LevelUpEvent,
+  StatPointSpentEvent,
   AnyGameEvent,
+  StatType,
 } from "@vscdc/engine";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "./gameDocumentProvider";
 import { PlayerTreeProvider } from "./playerTreeProvider";
@@ -273,6 +277,44 @@ export class GameController {
       }
     );
     this.eventUnsubscribers.push(unsubUnequipped);
+
+    // Subscribe to experience gained events
+    const unsubXpGained = engine.onEvent(
+      GameEventType.EXPERIENCE_GAINED,
+      (event: AnyGameEvent) => {
+        const xpEvent = event as ExperienceGainedEvent;
+        const message = `Gained ${xpEvent.amount} XP (${xpEvent.source}). Total: ${xpEvent.newTotal}`;
+        this.logCombat(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubXpGained);
+
+    // Subscribe to level up events
+    const unsubLevelUp = engine.onEvent(
+      GameEventType.LEVEL_UP,
+      (event: AnyGameEvent) => {
+        const levelEvent = event as LevelUpEvent;
+        const message = `LEVEL UP! Now level ${levelEvent.newLevel}. Gained ${levelEvent.statPointsGained} stat points.`;
+        this.logCombat(message);
+        vscode.window.showInformationMessage(
+          `Level Up! You are now level ${levelEvent.newLevel}. You have stat points to spend.`
+        );
+      }
+    );
+    this.eventUnsubscribers.push(unsubLevelUp);
+
+    // Subscribe to stat point spent events
+    const unsubStatSpent = engine.onEvent(
+      GameEventType.STAT_POINT_SPENT,
+      (event: AnyGameEvent) => {
+        const statEvent = event as StatPointSpentEvent;
+        const statName = statEvent.stat === "maxHealth" ? "Max Health" : 
+                        statEvent.stat === "attack" ? "Attack" : "Defense";
+        const message = `Increased ${statName} to ${statEvent.newValue}. ${statEvent.remainingPoints} points remaining.`;
+        this.logOther(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubStatSpent);
   }
 
   /**
@@ -844,6 +886,56 @@ export class GameController {
     this.inventoryTreeProvider.setInventory(engine.getInventory(), engine.getInventoryCapacity());
 
     vscode.window.showInformationMessage(`Dropped ${item.itemData.name}`);
+  }
+
+  /**
+   * Open the level up dialog to spend stat points
+   * Shows a Quick Pick dialog allowing the player to allocate stat points
+   */
+  async spendStatPoints(): Promise<void> {
+    if (!this.gameSession) return;
+
+    const engine = this.gameSession.engine;
+    
+    while (engine.canSpendStatPoints()) {
+      const stats = this.gameSession.getPlayerStats();
+      const remainingPoints = stats.statPoints;
+
+      const options: Array<{ label: string; description: string; stat: StatType }> = [
+        {
+          label: "$(heart) +5 Max Health",
+          description: `Current: ${stats.health.max}`,
+          stat: "maxHealth",
+        },
+        {
+          label: "$(symbol-misc) +1 Attack",
+          description: `Current: ${stats.attack}`,
+          stat: "attack",
+        },
+        {
+          label: "$(shield) +1 Defense",
+          description: `Current: ${stats.defense}`,
+          stat: "defense",
+        },
+      ];
+
+      const selected = await vscode.window.showQuickPick(options, {
+        title: `Spend Stat Point (${remainingPoints} remaining)`,
+        placeHolder: "Choose a stat to increase",
+        ignoreFocusOut: true,
+      });
+
+      if (!selected) {
+        // User cancelled - that's fine, they can spend later
+        break;
+      }
+
+      // Spend the point
+      engine.spendStatPoint(selected.stat);
+
+      // Update UI
+      this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+    }
   }
 
   dispose(): void {

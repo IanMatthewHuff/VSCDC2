@@ -7,10 +7,24 @@ import { Enemy, Position } from "@vscdc/engine";
 let enemyIdCounter = 0;
 
 /**
+ * Base XP value for enemies (multiplied by enemy level)
+ */
+export const BASE_ENEMY_XP = 20;
+
+/**
  * Creates a unique enemy ID
  */
 function generateEnemyId(prefix: string): string {
   return `${prefix}_${++enemyIdCounter}`;
+}
+
+/**
+ * Calculate XP reward for defeating an enemy
+ * @param enemy The defeated enemy
+ * @returns XP amount to grant
+ */
+export function getEnemyXpReward(enemy: Enemy): number {
+  return BASE_ENEMY_XP * enemy.level;
 }
 
 /**
@@ -32,6 +46,7 @@ export function createGoblin(position: Position): Enemy {
     health: { current: 5, max: 5 },
     attack: 3,
     defense: 0,
+    level: 1,
   };
 }
 

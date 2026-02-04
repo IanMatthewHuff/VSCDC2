@@ -95,6 +95,12 @@
         "title": "Drop",
         "category": "Dungeon Crawler",
         "icon": "$(trash)"
+      },
+      {
+        "command": "vscdc.spendStatPoints",
+        "title": "Spend Stat Points",
+        "category": "Dungeon Crawler",
+        "icon": "$(sparkle)"
       }
     ],
     "keybindings": [
