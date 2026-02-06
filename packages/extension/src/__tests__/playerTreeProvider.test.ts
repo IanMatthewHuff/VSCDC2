@@ -126,7 +126,7 @@ describe("PlayerTreeProvider", () => {
 
       // Stat points item should be last
       expect(children[5].label).toBe("Stat Points");
-      expect(children[5].description).toBe("3 available");
+      expect(children[5].description).toBe("3 available - Click to spend");
     });
 
     it("returns empty array after clearing player stats", async () => {

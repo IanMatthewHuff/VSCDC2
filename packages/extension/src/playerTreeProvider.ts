@@ -88,14 +88,17 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
 
       // Show stat points if available
       if (this.playerStats.statPoints > 0) {
-        items.push(
-          new PlayerStatItem(
-            "Stat Points",
-            `${this.playerStats.statPoints} available`,
-            vscode.TreeItemCollapsibleState.None,
-            new vscode.ThemeIcon("sparkle", new vscode.ThemeColor("charts.green"))
-          )
+        const statPointsItem = new PlayerStatItem(
+          "Stat Points",
+          `${this.playerStats.statPoints} available - Click to spend`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("sparkle", new vscode.ThemeColor("charts.green"))
         );
+        statPointsItem.command = {
+          command: "vscdc.spendStatPoints",
+          title: "Spend Stat Points",
+        };
+        items.push(statPointsItem);
       }
 
       return Promise.resolve(items);
