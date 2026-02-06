@@ -268,6 +268,10 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   engine.addToInventory(inventoryPotion1);
   engine.addToInventory(inventoryPotion2);
 
+  // Give player starting XP so killing the goblin triggers a level up
+  // Goblin gives 20 XP, player needs 100 XP to level up, so start with 80 XP
+  engine.grantExperience(80, "Starting experience");
+
   /**
    * Attempts to move the player by the given offset.
    * If an NPC is at the target position, interacts instead.
