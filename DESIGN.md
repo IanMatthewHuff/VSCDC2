@@ -259,7 +259,29 @@ Game events are logged to four VS Code output channels: Combat, Dialog, Other, a
 
 See `packages/extension/DESIGN.md` for implementation details.
 
-### 5.5 Map Representation
+### 5.5 Leveling System — DECIDED: XP + Stat Points
+
+Player gains XP from killing enemies and completing floors. XP accumulates until threshold is reached, then player levels up and receives stat points to allocate.
+
+**XP System**:
+- Enemies grant XP based on their level: `baseXP × enemyLevel` (baseXP = 20)
+- XP required for next level: `100 × currentLevel` (scaling linear)
+- Levels are processed one at a time; excess XP carries over
+
+**Stat Points**:
+- 2 points per level up
+- Banked system—player can spend anytime via command
+- Stats: +5 Max Health, +1 Attack, or +1 Defense per point
+
+**UI**:
+- Player view shows Level, XP progress, and available stat points
+- Quick Pick dialog for stat allocation
+- Level up notification shown on level up
+- XP gains logged to combat log
+
+See `packages/engine/DESIGN.md` for implementation details.
+
+### 5.6 Map Representation
 - 2D array of tiles (simple, fast)
 - Each tile has: terrain type, entity references, item stack
 - Fog of war as separate visibility layer

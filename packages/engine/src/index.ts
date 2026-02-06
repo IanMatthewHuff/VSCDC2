@@ -47,6 +47,9 @@ export type {
   EnvironmentDamageEvent,
   EquipmentEquippedEvent,
   EquipmentUnequippedEvent,
+  ExperienceGainedEvent,
+  LevelUpEvent,
+  StatPointSpentEvent,
   AnyGameEvent,
 } from "./events";
 
@@ -69,7 +72,16 @@ export {
   setInventoryCapacity,
   addConsumable,
   removeConsumable,
+  grantExperience,
+  spendStatPoint,
+  getXpForNextLevel,
+  BASE_XP_PER_LEVEL,
+  STAT_POINTS_PER_LEVEL,
+  HP_PER_POINT,
+  ATTACK_PER_POINT,
+  DEFENSE_PER_POINT,
 } from "./playerSlice";
+export type { StatType } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";

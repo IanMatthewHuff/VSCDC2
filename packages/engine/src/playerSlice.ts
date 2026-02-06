@@ -5,6 +5,37 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Player, Position, EquipmentItem, ConsumableItem, EquipmentSlot, DEFAULT_INVENTORY_CAPACITY } from "./types";
 
+// ============================================
+// Leveling Constants
+// ============================================
+
+/** Base XP required for level 2 (scales linearly: level N requires N * BASE_XP) */
+export const BASE_XP_PER_LEVEL = 100;
+
+/** Stat points granted per level up */
+export const STAT_POINTS_PER_LEVEL = 2;
+
+/** Max health increase per stat point spent on HP */
+export const HP_PER_POINT = 5;
+
+/** Attack increase per stat point spent on attack */
+export const ATTACK_PER_POINT = 1;
+
+/** Defense increase per stat point spent on defense */
+export const DEFENSE_PER_POINT = 1;
+
+/** Stats that can be upgraded with stat points */
+export type StatType = "maxHealth" | "attack" | "defense";
+
+/**
+ * Calculate XP required to reach the next level
+ * @param currentLevel The player's current level
+ * @returns XP required to level up
+ */
+export function getXpForNextLevel(currentLevel: number): number {
+  return currentLevel * BASE_XP_PER_LEVEL;
+}
+
 const initialPlayerState: Player = {
   id: "player",
   name: "Adventurer",
@@ -23,6 +54,9 @@ const initialPlayerState: Player = {
   inventoryCapacity: DEFAULT_INVENTORY_CAPACITY,
   baseAttack: 1,
   baseDefense: 0,
+  level: 1,
+  experience: 0,
+  statPoints: 0,
 };
 
 /**
@@ -146,6 +180,44 @@ export const playerSlice = createSlice({
         state.equipment.consumables[slot] = null;
       }
     },
+    /**
+     * Grant experience points to the player
+     * Handles level up if enough XP is accumulated (one level at a time)
+     */
+    grantExperience: (state, action: PayloadAction<{ amount: number }>) => {
+      state.experience += action.payload.amount;
+      
+      // Check for level up (one level at a time)
+      const xpForNextLevel = getXpForNextLevel(state.level);
+      if (state.experience >= xpForNextLevel) {
+        state.experience -= xpForNextLevel;
+        state.level += 1;
+        state.statPoints += STAT_POINTS_PER_LEVEL;
+      }
+    },
+    /**
+     * Spend a stat point to increase a stat
+     */
+    spendStatPoint: (state, action: PayloadAction<{ stat: StatType }>) => {
+      if (state.statPoints <= 0) {
+        return;
+      }
+      
+      const { stat } = action.payload;
+      switch (stat) {
+        case "maxHealth":
+          state.health.max += HP_PER_POINT;
+          state.health.current += HP_PER_POINT; // Also heal when increasing max
+          break;
+        case "attack":
+          state.baseAttack += ATTACK_PER_POINT;
+          break;
+        case "defense":
+          state.baseDefense += DEFENSE_PER_POINT;
+          break;
+      }
+      state.statPoints -= 1;
+    },
   },
 });
 
@@ -167,5 +239,7 @@ export const {
   setInventoryCapacity,
   addConsumable,
   removeConsumable,
+  grantExperience,
+  spendStatPoint,
 } = playerSlice.actions;
 export default playerSlice.reducer;

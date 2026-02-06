@@ -13,12 +13,14 @@ import {
   Position, 
   Environment,
   ConsumableItem,
+  GameEventType,
+  EntityDestroyedEvent,
 } from "@vscdc/engine";
 import { createTestLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
-import { createGoblin, resetEnemyIdCounter } from "./enemies";
+import { createGoblin, resetEnemyIdCounter, getEnemyXpReward } from "./enemies";
 import { processAllEnemyTurns } from "./enemyAI";
 import { 
   createHealingPotion, 
@@ -67,7 +69,7 @@ export {
 export type { EnvironmentEffect } from "./environments";
 
 // Re-export enemy types and utilities
-export { createGoblin } from "./enemies";
+export { createGoblin, getEnemyXpReward, BASE_ENEMY_XP } from "./enemies";
 
 // Re-export item types and utilities
 export { 
@@ -97,6 +99,14 @@ export interface PlayerStats {
     armor: string | null;
     consumables: (string | null)[];
   };
+  /** Player's current level */
+  level: number;
+  /** Current experience points */
+  experience: number;
+  /** XP required for next level */
+  experienceToNextLevel: number;
+  /** Unspent stat points available */
+  statPoints: number;
 }
 
 /**
@@ -177,6 +187,7 @@ export function createTargetDummy(position: Position): Enemy {
     health: { current: 6, max: 6 },
     attack: 0,
     defense: 1,
+    level: 1,
   };
 }
 
@@ -257,6 +268,10 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   engine.addToInventory(inventoryPotion1);
   engine.addToInventory(inventoryPotion2);
 
+  // Give player starting XP so killing the goblin triggers a level up
+  // Goblin gives 20 XP, player needs 100 XP to level up, so start with 80 XP
+  engine.grantExperience(80, "Starting experience");
+
   /**
    * Attempts to move the player by the given offset.
    * If an NPC is at the target position, interacts instead.
@@ -288,6 +303,12 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
     if (entityAtTarget) {
       // Attack the entity instead of moving
       const attackResult = engine.attack(entityAtTarget.id);
+      
+      // Grant XP if the enemy was destroyed
+      if (attackResult.targetDestroyed) {
+        const xpReward = getEnemyXpReward(entityAtTarget);
+        engine.grantExperience(xpReward, `Defeated ${entityAtTarget.name}`);
+      }
       
       // Process enemy turns after player attack
       processAllEnemyTurns(engine, level);
@@ -343,6 +364,10 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
         armor: equipment.armor?.name || null,
         consumables: equipment.consumables.map((item) => item?.name || null),
       },
+      level: engine.getPlayerLevel(),
+      experience: engine.getPlayerExperience(),
+      experienceToNextLevel: engine.getXpForNextLevel(),
+      statPoints: engine.getPlayerStatPoints(),
     };
   }
 

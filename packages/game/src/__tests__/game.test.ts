@@ -114,8 +114,8 @@ describe("createGame", () => {
       expect(game.movePlayer(-1, 0).actionType).toBe("blocked"); // left wall
       expect(game.movePlayer(0, -1).actionType).toBe("blocked"); // top wall
 
-      // Move to bottom-right corner (4,4)
-      game.movePlayer(3, 3);
+      // Move to bottom-right corner (5,5) in the 7x7 level
+      game.movePlayer(4, 4);
       expect(game.movePlayer(1, 0).actionType).toBe("blocked"); // right wall
       expect(game.movePlayer(0, 1).actionType).toBe("blocked"); // bottom wall
     });

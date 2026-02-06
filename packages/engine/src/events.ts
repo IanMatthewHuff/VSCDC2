@@ -13,6 +13,9 @@ export enum GameEventType {
   ENVIRONMENT_DAMAGE = "environment_damage",
   EQUIPMENT_EQUIPPED = "equipment_equipped",
   EQUIPMENT_UNEQUIPPED = "equipment_unequipped",
+  EXPERIENCE_GAINED = "experience_gained",
+  LEVEL_UP = "level_up",
+  STAT_POINT_SPENT = "stat_point_spent",
 }
 
 /**
@@ -129,6 +132,35 @@ export interface EquipmentUnequippedEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when experience is gained
+ */
+export interface ExperienceGainedEvent extends GameEvent {
+  type: GameEventType.EXPERIENCE_GAINED;
+  amount: number;
+  newTotal: number;
+  source: string;
+}
+
+/**
+ * Event emitted when the player levels up
+ */
+export interface LevelUpEvent extends GameEvent {
+  type: GameEventType.LEVEL_UP;
+  newLevel: number;
+  statPointsGained: number;
+}
+
+/**
+ * Event emitted when a stat point is spent
+ */
+export interface StatPointSpentEvent extends GameEvent {
+  type: GameEventType.STAT_POINT_SPENT;
+  stat: string;
+  newValue: number;
+  remainingPoints: number;
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -141,4 +173,7 @@ export type AnyGameEvent =
   | EnvironmentEnteredEvent
   | EnvironmentDamageEvent
   | EquipmentEquippedEvent
-  | EquipmentUnequippedEvent;
+  | EquipmentUnequippedEvent
+  | ExperienceGainedEvent
+  | LevelUpEvent
+  | StatPointSpentEvent;

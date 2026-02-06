@@ -38,6 +38,7 @@ describe("GameEngine", () => {
         displayChar: "E",
         color: "red",
         health: { current: 3, max: 3 },
+        level: 1,
         ...overrides,
       };
     }
@@ -121,6 +122,7 @@ describe("GameEngine", () => {
         displayChar: "E",
         color: "red",
         health: { current: 3, max: 3 },
+        level: 1,
         ...overrides,
       };
     }
@@ -225,6 +227,7 @@ describe("GameEngine", () => {
         displayChar: "E",
         color: "red",
         health: { current: 3, max: 3 },
+        level: 1,
         ...overrides,
       };
     }
@@ -277,6 +280,101 @@ describe("GameEngine", () => {
       engine.attack("test_enemy");
 
       expect(destroyedHandler).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("leveling system", () => {
+    it("starts at level 1 with 0 experience", () => {
+      const engine = new GameEngine();
+      expect(engine.getPlayerLevel()).toBe(1);
+      expect(engine.getPlayerExperience()).toBe(0);
+      expect(engine.getPlayerStatPoints()).toBe(0);
+    });
+
+    it("can grant experience", () => {
+      const engine = new GameEngine();
+      engine.grantExperience(50, "test");
+      expect(engine.getPlayerExperience()).toBe(50);
+    });
+
+    it("levels up when XP threshold is reached", () => {
+      const engine = new GameEngine();
+      // Level 1 requires 100 XP to level up
+      engine.grantExperience(100, "test");
+      expect(engine.getPlayerLevel()).toBe(2);
+      expect(engine.getPlayerExperience()).toBe(0); // XP resets after level
+      expect(engine.getPlayerStatPoints()).toBe(2); // 2 points per level
+    });
+
+    it("carries over excess XP after leveling", () => {
+      const engine = new GameEngine();
+      engine.grantExperience(120, "test");
+      expect(engine.getPlayerLevel()).toBe(2);
+      expect(engine.getPlayerExperience()).toBe(20); // 120 - 100 = 20
+    });
+
+    it("levels up one level at a time", () => {
+      const engine = new GameEngine();
+      // Level 1 needs 100 XP, level 2 needs 200 XP
+      engine.grantExperience(300, "test"); // Enough for 2 levels
+      expect(engine.getPlayerLevel()).toBe(2); // Only one level at a time
+      expect(engine.getPlayerExperience()).toBe(200); // 300 - 100 = 200
+    });
+
+    it("can spend stat points on attack", () => {
+      const engine = new GameEngine();
+      engine.grantExperience(100, "test"); // Level up to get points
+      
+      const initialAttack = engine.getState().player.baseAttack;
+      const success = engine.spendStatPoint("attack");
+      
+      expect(success).toBe(true);
+      expect(engine.getState().player.baseAttack).toBe(initialAttack + 1);
+      expect(engine.getPlayerStatPoints()).toBe(1); // Started with 2, spent 1
+    });
+
+    it("can spend stat points on defense", () => {
+      const engine = new GameEngine();
+      engine.grantExperience(100, "test");
+      
+      const initialDefense = engine.getState().player.baseDefense;
+      engine.spendStatPoint("defense");
+      
+      expect(engine.getState().player.baseDefense).toBe(initialDefense + 1);
+    });
+
+    it("can spend stat points on max health", () => {
+      const engine = new GameEngine();
+      engine.grantExperience(100, "test");
+      
+      const initialMaxHealth = engine.getPlayerHealth().max;
+      engine.spendStatPoint("maxHealth");
+      
+      expect(engine.getPlayerHealth().max).toBe(initialMaxHealth + 5);
+      // Current health should also increase
+      expect(engine.getPlayerHealth().current).toBe(initialMaxHealth + 5);
+    });
+
+    it("returns false when trying to spend with no points", () => {
+      const engine = new GameEngine();
+      const success = engine.spendStatPoint("attack");
+      expect(success).toBe(false);
+    });
+
+    it("canSpendStatPoints returns correct value", () => {
+      const engine = new GameEngine();
+      expect(engine.canSpendStatPoints()).toBe(false);
+      
+      engine.grantExperience(100, "test");
+      expect(engine.canSpendStatPoints()).toBe(true);
+    });
+
+    it("getXpForNextLevel returns correct values", () => {
+      const engine = new GameEngine();
+      expect(engine.getXpForNextLevel()).toBe(100); // Level 1 needs 100
+      
+      engine.grantExperience(100, "test");
+      expect(engine.getXpForNextLevel()).toBe(200); // Level 2 needs 200
     });
   });
 });

@@ -23,6 +23,10 @@ import {
   setInventoryCapacity,
   addConsumable,
   removeConsumable,
+  grantExperience,
+  spendStatPoint,
+  getXpForNextLevel,
+  StatType,
 } from "./playerSlice";
 import { incrementTurn } from "./gameSlice";
 import {
@@ -46,7 +50,7 @@ import {
   selectAllEnvironments,
 } from "./environmentSlice";
 import { GameEventType, AnyGameEvent } from "./events";
-import { EventHandler, queueAttackEvent, queueEnvironmentDamageEvent } from "./eventMiddleware";
+import { EventHandler, queueAttackEvent, queueEnvironmentDamageEvent, queueExperienceGainEvent, queueStatPointSpentEvent } from "./eventMiddleware";
 
 /**
  * Result of an attack action
@@ -581,5 +585,75 @@ export class GameEngine {
 
     // Apply damage to player
     this.store.dispatch(damagePlayer({ amount: damage }));
+  }
+
+  // ============================================
+  // Leveling System
+  // ============================================
+
+  /**
+   * Get the player's current level
+   */
+  public getPlayerLevel(): number {
+    return this.store.getState().player.level;
+  }
+
+  /**
+   * Get the player's current experience points
+   */
+  public getPlayerExperience(): number {
+    return this.store.getState().player.experience;
+  }
+
+  /**
+   * Get the XP required for the player to reach the next level
+   */
+  public getXpForNextLevel(): number {
+    return getXpForNextLevel(this.store.getState().player.level);
+  }
+
+  /**
+   * Get the player's unspent stat points
+   */
+  public getPlayerStatPoints(): number {
+    return this.store.getState().player.statPoints;
+  }
+
+  /**
+   * Grant experience points to the player
+   * @param amount Amount of XP to grant
+   * @param source Description of XP source (e.g., "Defeated Goblin")
+   */
+  public grantExperience(amount: number, source: string): void {
+    // Queue the experience gain event
+    queueExperienceGainEvent({ amount, source });
+    
+    // Grant the experience (may trigger level up)
+    this.store.dispatch(grantExperience({ amount }));
+  }
+
+  /**
+   * Spend a stat point to increase a stat
+   * @param stat The stat to increase ("maxHealth", "attack", or "defense")
+   * @returns true if point was spent, false if no points available
+   */
+  public spendStatPoint(stat: StatType): boolean {
+    if (this.getPlayerStatPoints() <= 0) {
+      return false;
+    }
+
+    // Queue the stat point spent event
+    queueStatPointSpentEvent({ stat });
+
+    // Spend the point
+    this.store.dispatch(spendStatPoint({ stat }));
+    return true;
+  }
+
+  /**
+   * Check if the player can level up (has pending stat points)
+   */
+  public canSpendStatPoints(): boolean {
+    return this.getPlayerStatPoints() > 0;
   }
 }

@@ -52,13 +52,19 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
     }
 
     if (!element) {
-      // Root level: show name, health, attack, and defense
-      return Promise.resolve([
+      // Root level: show name, level, health, attack, defense, and stat points
+      const items: PlayerStatItem[] = [
         new PlayerStatItem(
           "Name",
           this.playerStats.name,
           vscode.TreeItemCollapsibleState.None,
           new vscode.ThemeIcon("account")
+        ),
+        new PlayerStatItem(
+          "Level",
+          `${this.playerStats.level} (${this.playerStats.experience}/${this.playerStats.experienceToNextLevel} XP)`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("star-full", new vscode.ThemeColor("charts.yellow"))
         ),
         new PlayerStatItem(
           "Health",
@@ -78,7 +84,24 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
           vscode.TreeItemCollapsibleState.None,
           new vscode.ThemeIcon("shield")
         ),
-      ]);
+      ];
+
+      // Show stat points if available
+      if (this.playerStats.statPoints > 0) {
+        const statPointsItem = new PlayerStatItem(
+          "Stat Points",
+          `${this.playerStats.statPoints} available - Click to spend`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("sparkle", new vscode.ThemeColor("charts.green"))
+        );
+        statPointsItem.command = {
+          command: "vscdc.spendStatPoints",
+          title: "Spend Stat Points",
+        };
+        items.push(statPointsItem);
+      }
+
+      return Promise.resolve(items);
     }
 
     return Promise.resolve([]);

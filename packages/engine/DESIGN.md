@@ -138,13 +138,14 @@ Future additions:
 - ✓ Environment damage system
 - ✓ NPC interaction event types
 - ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
+- ✓ Leveling system with XP, levels, and stat point allocation
+- ✓ Leveling event types (EXPERIENCE_GAINED, LEVEL_UP, STAT_POINT_SPENT)
 - ✓ Comprehensive test suite for core functionality
 
 ### Planned
 - Map system and spatial queries
 - Action validation system
 - State serialization/deserialization
-- More event types and handlers
 - Advanced combat mechanics
 
 ## Key Systems
@@ -268,6 +269,7 @@ The engine implements a stat-based damage formula for combat:
 **Entity Combat Stats**:
 - `attack`: Optional attack stat for enemies (defaults to 0)
 - `defense`: Optional defense stat for enemies (defaults to 0)
+- `level`: Enemy level (required, used for XP calculation)
 - `getEntityAttack(id)` and `getEntityDefense(id)` query entity stats
 
 **Combat Methods**:
@@ -277,3 +279,42 @@ The engine implements a stat-based damage formula for combat:
 **Key Behavior**:
 - High defense can completely negate weak attacks (0 damage is valid)
 - Combat events include calculated damage for UI logging
+
+### Leveling System
+**Status: Implemented**
+
+The engine provides a complete leveling system for player progression:
+
+**Player Leveling Stats**:
+- `level`: Current player level (starts at 1)
+- `experience`: Current XP accumulated
+- `statPoints`: Unspent stat points available to allocate
+
+**Constants**:
+- `BASE_XP_PER_LEVEL = 100`: Level N requires N × 100 XP to reach level N+1
+- `STAT_POINTS_PER_LEVEL = 2`: Points granted per level up
+- `HP_PER_POINT = 5`: Max health increase per point spent
+- `ATTACK_PER_POINT = 1`: Attack increase per point spent
+- `DEFENSE_PER_POINT = 1`: Defense increase per point spent
+
+**Leveling Methods**:
+- `grantExperience(amount, source)`: Grant XP to player, handles level up
+- `spendStatPoint(stat)`: Spend a point to increase a stat ("maxHealth", "attack", or "defense")
+- `getPlayerLevel()`: Query current level
+- `getPlayerExperience()`: Query current XP
+- `getXpForNextLevel()`: Query XP needed for next level
+- `getPlayerStatPoints()`: Query unspent points
+- `canSpendStatPoints()`: Check if player has points to spend
+
+**Leveling Events**:
+- `EXPERIENCE_GAINED`: Emitted when XP is granted (includes amount, source, new total)
+- `LEVEL_UP`: Emitted when player levels up (includes new level, points gained)
+- `STAT_POINT_SPENT`: Emitted when stat point is spent (includes stat, new value, remaining points)
+
+**Level Up Flow**:
+1. Enemy is killed, game layer calls `grantExperience(amount, source)`
+2. XP is added to player state
+3. If XP >= threshold, level increases by 1 (one level at a time)
+4. Stat points are granted and `LEVEL_UP` event is emitted
+5. Excess XP carries over to next level
+6. Player can spend points via `spendStatPoint(stat)` at any time

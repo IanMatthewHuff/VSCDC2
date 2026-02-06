@@ -51,12 +51,12 @@ function createTile(type: TileType): Tile {
 }
 
 /**
- * Creates a 6x6 test level bounded by walls
- * The interior is 4x4 floor tiles where the player can move
+ * Creates a 7x7 test level bounded by walls
+ * The interior is 5x5 floor tiles where the player can move
  */
 export function createTestLevel(): Level {
-  const width = 6;
-  const height = 6;
+  const width = 7;
+  const height = 7;
   const tiles: Tile[][] = [];
 
   for (let y = 0; y < height; y++) {

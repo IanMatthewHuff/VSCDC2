@@ -117,6 +117,12 @@ export interface Player {
   baseAttack: number;
   /** Base defense value (before equipment bonuses) */
   baseDefense: number;
+  /** Current player level (starts at 1) */
+  level: number;
+  /** Current experience points */
+  experience: number;
+  /** Unspent stat points available to allocate */
+  statPoints: number;
 }
 
 /**
@@ -147,6 +153,8 @@ export interface Enemy extends CombatEntity {
   attack?: number;
   /** Base defense value for combat */
   defense?: number;
+  /** Enemy level (used for XP calculation) */
+  level: number;
 }
 
 /**

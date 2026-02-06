@@ -15,6 +15,9 @@ import {
   EnvironmentDamageEvent,
   EquipmentEquippedEvent,
   EquipmentUnequippedEvent,
+  ExperienceGainedEvent,
+  LevelUpEvent,
+  StatPointSpentEvent,
   AnyGameEvent,
 } from "./events";
 import { selectEnvironmentAt } from "./environmentSlice";
@@ -46,6 +49,21 @@ interface PendingEnvironmentDamage {
 }
 
 /**
+ * Pending experience gain event to be emitted after state update
+ */
+interface PendingExperienceGain {
+  amount: number;
+  source: string;
+}
+
+/**
+ * Pending stat point spent event to be emitted after state update
+ */
+interface PendingStatPointSpent {
+  stat: string;
+}
+
+/**
  * Store for pending attack events (filled by action, emitted by middleware)
  */
 let pendingAttacks: PendingAttack[] = [];
@@ -54,6 +72,16 @@ let pendingAttacks: PendingAttack[] = [];
  * Store for pending environment damage events
  */
 let pendingEnvironmentDamages: PendingEnvironmentDamage[] = [];
+
+/**
+ * Store for pending experience gain events
+ */
+let pendingExperienceGains: PendingExperienceGain[] = [];
+
+/**
+ * Store for pending stat point spent events
+ */
+let pendingStatPointsSpent: PendingStatPointSpent[] = [];
 
 /**
  * Queue an attack event to be emitted after the action is processed
@@ -67,6 +95,20 @@ export function queueAttackEvent(attack: PendingAttack): void {
  */
 export function queueEnvironmentDamageEvent(damage: PendingEnvironmentDamage): void {
   pendingEnvironmentDamages.push(damage);
+}
+
+/**
+ * Queue an experience gain event to be emitted after the action is processed
+ */
+export function queueExperienceGainEvent(gain: PendingExperienceGain): void {
+  pendingExperienceGains.push(gain);
+}
+
+/**
+ * Queue a stat point spent event to be emitted after the action is processed
+ */
+export function queueStatPointSpentEvent(spent: PendingStatPointSpent): void {
+  pendingStatPointsSpent.push(spent);
 }
 
 /**
@@ -166,6 +208,58 @@ export function createEventMiddleware(
       emitEvent(eventHandlers, damageEvent);
     }
     pendingEnvironmentDamages = [];
+
+    // Emit experience gain events for any pending gains
+    for (const xpGain of pendingExperienceGains) {
+      const xpEvent: ExperienceGainedEvent = {
+        type: GameEventType.EXPERIENCE_GAINED,
+        timestamp: Date.now(),
+        amount: xpGain.amount,
+        newTotal: nextState.player.experience,
+        source: xpGain.source,
+      };
+      emitEvent(eventHandlers, xpEvent);
+    }
+    pendingExperienceGains = [];
+
+    // Emit stat point spent events for any pending spends
+    for (const statSpent of pendingStatPointsSpent) {
+      let newValue: number;
+      switch (statSpent.stat) {
+        case "maxHealth":
+          newValue = nextState.player.health.max;
+          break;
+        case "attack":
+          newValue = nextState.player.baseAttack;
+          break;
+        case "defense":
+          newValue = nextState.player.baseDefense;
+          break;
+        default:
+          newValue = 0;
+      }
+      const statEvent: StatPointSpentEvent = {
+        type: GameEventType.STAT_POINT_SPENT,
+        timestamp: Date.now(),
+        stat: statSpent.stat,
+        newValue,
+        remainingPoints: nextState.player.statPoints,
+      };
+      emitEvent(eventHandlers, statEvent);
+    }
+    pendingStatPointsSpent = [];
+
+    // Emit level up event if level changed
+    if (prevState.player.level !== nextState.player.level) {
+      const levelUpEvent: LevelUpEvent = {
+        type: GameEventType.LEVEL_UP,
+        timestamp: Date.now(),
+        newLevel: nextState.player.level,
+        statPointsGained: nextState.player.statPoints - prevState.player.statPoints + 
+          (prevState.player.statPoints > nextState.player.statPoints ? 0 : 0), // Points gained this level
+      };
+      emitEvent(eventHandlers, levelUpEvent);
+    }
 
     // Check for destroyed entities (entities that were removed)
     for (const [entityId, entity] of Object.entries(prevEntities)) {
