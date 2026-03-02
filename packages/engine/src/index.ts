@@ -85,3 +85,10 @@ export type { StatType } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";
+
+// Export seeded random
+export { SeededRandom } from "./random";
+
+// Export dungeon generator
+export { generateDungeon } from "./dungeonGenerator";
+export type { Rect, DungeonConfig, GeneratedDungeon } from "./dungeonGenerator";

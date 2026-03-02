@@ -26,6 +26,11 @@
         "category": "Dungeon Crawler"
       },
       {
+        "command": "vscdc.startDungeonCrawl",
+        "title": "Start Dungeon Crawl",
+        "category": "Dungeon Crawler"
+      },
+      {
         "command": "vscdc.moveUp",
         "title": "Move Up",
         "category": "Dungeon Crawler"

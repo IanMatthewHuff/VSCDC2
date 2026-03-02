@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   createTestLevel,
+  createGeneratedLevel,
   TileType,
   isInBounds,
   getTileAt,
@@ -106,6 +107,47 @@ describe("level", () => {
     it("returns false for out of bounds", () => {
       expect(isWalkable(level, -1, 0)).toBe(false);
       expect(isWalkable(level, 7, 0)).toBe(false);
+    });
+  });
+
+  describe("createGeneratedLevel", () => {
+    it("creates a level with correct dimensions", () => {
+      const level = createGeneratedLevel(42);
+      expect(level.width).toBe(40);
+      expect(level.height).toBe(25);
+      expect(level.tiles.length).toBe(25);
+      expect(level.tiles[0].length).toBe(40);
+    });
+
+    it("has rooms populated", () => {
+      const level = createGeneratedLevel(42);
+      expect(level.rooms).toBeDefined();
+      expect(level.rooms!.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("playerStart is on a floor tile", () => {
+      const level = createGeneratedLevel(42);
+      const tile = getTileAt(level, level.playerStart.x, level.playerStart.y);
+      expect(tile).toBeDefined();
+      expect(tile!.type).toBe(TileType.Floor);
+    });
+
+    it("all tiles are valid Tile objects", () => {
+      const level = createGeneratedLevel(42);
+      for (let y = 0; y < level.height; y++) {
+        for (let x = 0; x < level.width; x++) {
+          const tile = level.tiles[y][x];
+          expect([TileType.Floor, TileType.Wall]).toContain(tile.type);
+          expect(typeof tile.displayChar).toBe("string");
+        }
+      }
+    });
+
+    it("same seed produces same level", () => {
+      const level1 = createGeneratedLevel(42);
+      const level2 = createGeneratedLevel(42);
+      expect(level1.playerStart).toEqual(level2.playerStart);
+      expect(level1.rooms).toEqual(level2.rooms);
     });
   });
 });

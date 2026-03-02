@@ -5,18 +5,19 @@
  * rules, and content. It depends on @vscdc/engine.
  */
 
-import { 
-  ENGINE_VERSION, 
-  GameEngine, 
-  Enemy, 
-  NPC, 
-  Position, 
+import {
+  ENGINE_VERSION,
+  GameEngine,
+  Enemy,
+  NPC,
+  Position,
   Environment,
   ConsumableItem,
   GameEventType,
   EntityDestroyedEvent,
+  SeededRandom,
 } from "@vscdc/engine";
-import { createTestLevel, isWalkable, Level } from "./level";
+import { createTestLevel, createGeneratedLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
 import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
@@ -36,11 +37,15 @@ export const GAME_VERSION = "0.0.1";
 export {
   TileType,
   createTestLevel,
+  createGeneratedLevel,
   isInBounds,
   getTileAt,
   isWalkable,
 } from "./level";
 export type { Tile, Level } from "./level";
+
+// Re-export engine dungeon types
+export type { Rect } from "@vscdc/engine";
 
 // Re-export entity types from engine
 export type { 
@@ -200,6 +205,152 @@ export interface CreateGameOptions {
 }
 
 /**
+ * Options for creating a dungeon crawl session
+ */
+export interface CreateDungeonCrawlOptions {
+  /** Seed for deterministic dungeon generation */
+  seed?: number;
+}
+
+/**
+ * Builds a GameSession from an engine and level.
+ * Shared by both createGame() and createDungeonCrawl().
+ */
+function buildGameSession(engine: GameEngine, level: Level): GameSession {
+  function movePlayer(dx: number, dy: number): ActionResult {
+    const pos = engine.getPlayerPosition();
+    const newX = pos.x + dx;
+    const newY = pos.y + dy;
+    const targetPosition = { x: newX, y: newY };
+
+    // Check if there's an NPC at the target position
+    const npcAtTarget = engine.getNPCAt(targetPosition);
+    if (npcAtTarget) {
+      return {
+        success: true,
+        actionType: "interact",
+        interactTarget: npcAtTarget,
+      };
+    }
+
+    // Check if there's an enemy at the target position
+    const entityAtTarget = engine.getEntityAt(targetPosition);
+    if (entityAtTarget) {
+      const attackResult = engine.attack(entityAtTarget.id);
+
+      if (attackResult.targetDestroyed) {
+        const xpReward = getEnemyXpReward(entityAtTarget);
+        engine.grantExperience(xpReward, `Defeated ${entityAtTarget.name}`);
+      }
+
+      processAllEnemyTurns(engine, level);
+
+      return {
+        success: attackResult.hit,
+        actionType: "attack",
+        attackTarget: entityAtTarget,
+        targetDestroyed: attackResult.targetDestroyed,
+      };
+    }
+
+    // No enemy or NPC, try to move
+    if (isWalkable(level, newX, newY)) {
+      engine.movePlayerBy(dx, dy);
+
+      const environment = engine.getEnvironmentAt(targetPosition);
+      if (environment) {
+        const effect = getEnvironmentEffect(environment.type);
+        if (effect && effect.triggersOnEntry && typeof effect.damage === "number") {
+          engine.applyEnvironmentDamage(environment.type, effect.damage);
+        }
+      }
+
+      processAllEnemyTurns(engine, level);
+
+      return {
+        success: true,
+        actionType: "move",
+      };
+    }
+
+    return {
+      success: false,
+      actionType: "blocked",
+    };
+  }
+
+  function getPlayerStats(): PlayerStats {
+    const equipment = engine.getPlayerEquipment();
+    return {
+      name: engine.getPlayerName(),
+      health: engine.getPlayerHealth(),
+      attack: engine.getPlayerAttack(),
+      defense: engine.getPlayerDefense(),
+      equipment: {
+        armor: equipment.armor?.name || null,
+        consumables: equipment.consumables.map((item) => item?.name || null),
+      },
+      level: engine.getPlayerLevel(),
+      experience: engine.getPlayerExperience(),
+      experienceToNextLevel: engine.getXpForNextLevel(),
+      statPoints: engine.getPlayerStatPoints(),
+    };
+  }
+
+  function getEntities(): Enemy[] {
+    return engine.getEntities();
+  }
+
+  function getEntityAt(position: Position): Enemy | undefined {
+    return engine.getEntityAt(position);
+  }
+
+  function getNPCs(): NPC[] {
+    return engine.getNPCs();
+  }
+
+  function getNPCAt(position: Position): NPC | undefined {
+    return engine.getNPCAt(position);
+  }
+
+  function getEnvironments(): Environment[] {
+    return engine.getEnvironments();
+  }
+
+  function getEnvironmentAt(position: Position): Environment | undefined {
+    return engine.getEnvironmentAt(position);
+  }
+
+  function useConsumable(slot: number): void {
+    engine.useConsumableItem(slot);
+  }
+
+  function removeConsumable(slot: number): void {
+    engine.removeConsumableItem(slot);
+  }
+
+  function onEquipmentChanged(): void {
+    processAllEnemyTurns(engine, level);
+  }
+
+  return {
+    engine,
+    level,
+    movePlayer,
+    getPlayerStats,
+    getEntities,
+    getEntityAt,
+    getNPCs,
+    getNPCAt,
+    getEnvironments,
+    getEnvironmentAt,
+    useConsumable,
+    removeConsumable,
+    onEquipmentChanged,
+  };
+}
+
+/**
  * Creates a new game instance with the test level
  */
 export function createGame(options: CreateGameOptions = {}): GameSession {
@@ -272,182 +423,80 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   // Goblin gives 20 XP, player needs 100 XP to level up, so start with 80 XP
   engine.grantExperience(80, "Starting experience");
 
-  /**
-   * Attempts to move the player by the given offset.
-   * If an NPC is at the target position, interacts instead.
-   * If an enemy is at the target position, attacks instead.
-   * After a successful action, processes enemy turns.
-   * Returns the result of the action.
-   */
-  function movePlayer(dx: number, dy: number): ActionResult {
-    const pos = engine.getPlayerPosition();
-    const newX = pos.x + dx;
-    const newY = pos.y + dy;
-    const targetPosition = { x: newX, y: newY };
+  return buildGameSession(engine, level);
+}
 
-    // Check if there's an NPC at the target position
-    const npcAtTarget = engine.getNPCAt(targetPosition);
-    if (npcAtTarget) {
-      // Interact with the NPC instead of moving
-      // The NPC interaction is handled by the UI layer, not here
-      // NPC interaction does not trigger enemy turns
-      return {
-        success: true,
-        actionType: "interact",
-        interactTarget: npcAtTarget,
-      };
-    }
+/**
+ * Creates a new dungeon crawl session with a procedurally generated level
+ */
+export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): GameSession {
+  // Reset entity ID counters
+  entityIdCounter = 0;
+  resetNPCIdCounter();
+  resetEnemyIdCounter();
+  resetItemIdCounter();
 
-    // Check if there's an enemy at the target position
-    const entityAtTarget = engine.getEntityAt(targetPosition);
-    if (entityAtTarget) {
-      // Attack the entity instead of moving
-      const attackResult = engine.attack(entityAtTarget.id);
-      
-      // Grant XP if the enemy was destroyed
-      if (attackResult.targetDestroyed) {
-        const xpReward = getEnemyXpReward(entityAtTarget);
-        engine.grantExperience(xpReward, `Defeated ${entityAtTarget.name}`);
-      }
-      
-      // Process enemy turns after player attack
-      processAllEnemyTurns(engine, level);
-      
-      return {
-        success: attackResult.hit,
-        actionType: "attack",
-        attackTarget: entityAtTarget,
-        targetDestroyed: attackResult.targetDestroyed,
-      };
-    }
+  // Initialize environment effects
+  initializeEnvironmentEffects();
 
-    // No enemy or NPC, try to move
-    if (isWalkable(level, newX, newY)) {
-      engine.movePlayerBy(dx, dy);
+  // Initialize dialog handlers
+  initializeNPCDialogs();
 
-      // Check if player entered an environment and apply its effects
-      const environment = engine.getEnvironmentAt(targetPosition);
-      if (environment) {
-        const effect = getEnvironmentEffect(environment.type);
-        if (effect && effect.triggersOnEntry && typeof effect.damage === "number") {
-          engine.applyEnvironmentDamage(environment.type, effect.damage);
-        }
-      }
+  const engine = new GameEngine({ enableDevTools: false });
+  const level = createGeneratedLevel(options.seed);
 
-      // Process enemy turns after player movement
-      processAllEnemyTurns(engine, level);
+  // Set player to starting position (center of the first room)
+  engine.movePlayerTo(level.playerStart.x, level.playerStart.y);
 
-      return {
-        success: true,
-        actionType: "move",
-      };
-    }
-
-    // Blocked by wall or out of bounds
-    return {
-      success: false,
-      actionType: "blocked",
+  // Place a goblin in a random non-start room
+  const rooms = level.rooms ?? [];
+  if (rooms.length > 1) {
+    const rng = new SeededRandom(options.seed ?? Date.now());
+    // Advance RNG past the dungeon generation sequence
+    // Pick a room index from 1..rooms.length-1 (skip room 0 = player start)
+    const goblinRoomIdx = rng.nextInt(1, rooms.length - 1);
+    const goblinRoom = rooms[goblinRoomIdx];
+    const goblinPos = {
+      x: Math.floor(goblinRoom.x + goblinRoom.width / 2),
+      y: Math.floor(goblinRoom.y + goblinRoom.height / 2),
     };
+    const goblin = createGoblin(goblinPos);
+    engine.addEntity(goblin);
+
+    // Place lava in another random room (not the start room or goblin room)
+    const availableRooms = rooms
+      .map((room, idx) => ({ room, idx }))
+      .filter(({ idx }) => idx !== 0 && idx !== goblinRoomIdx);
+
+    if (availableRooms.length > 0) {
+      const lavaChoice = availableRooms[rng.nextInt(0, availableRooms.length - 1)];
+      const lavaRoom = lavaChoice.room;
+      const lavaPos = {
+        x: Math.floor(lavaRoom.x + lavaRoom.width / 2),
+        y: Math.floor(lavaRoom.y + lavaRoom.height / 2),
+      };
+      const lava = createLavaEnvironment(lavaPos);
+      engine.addEnvironment(lava);
+    }
   }
 
-  /**
-   * Gets the current player stats
-   */
-  function getPlayerStats(): PlayerStats {
-    const equipment = engine.getPlayerEquipment();
-    return {
-      name: engine.getPlayerName(),
-      health: engine.getPlayerHealth(),
-      attack: engine.getPlayerAttack(),
-      defense: engine.getPlayerDefense(),
-      equipment: {
-        armor: equipment.armor?.name || null,
-        consumables: equipment.consumables.map((item) => item?.name || null),
-      },
-      level: engine.getPlayerLevel(),
-      experience: engine.getPlayerExperience(),
-      experienceToNextLevel: engine.getXpForNextLevel(),
-      statPoints: engine.getPlayerStatPoints(),
-    };
-  }
+  // Give player the same starting equipment as createGame()
+  const chainMail = createChainMailArmor();
+  engine.equipArmorItem(chainMail);
 
-  /**
-   * Gets all entities in the game
-   */
-  function getEntities(): Enemy[] {
-    return engine.getEntities();
-  }
+  const club = createBasicClub();
+  engine.equipRightArmItem(club);
 
-  /**
-   * Gets an entity at a specific position
-   */
-  function getEntityAt(position: Position): Enemy | undefined {
-    return engine.getEntityAt(position);
-  }
+  const healingPotion = createHealingPotion();
+  engine.addConsumableItem(healingPotion, 0);
 
-  /**
-   * Gets all NPCs in the game
-   */
-  function getNPCs(): NPC[] {
-    return engine.getNPCs();
-  }
+  const ironSword = createIronSword();
+  engine.addToInventory(ironSword);
 
-  /**
-   * Gets an NPC at a specific position
-   */
-  function getNPCAt(position: Position): NPC | undefined {
-    return engine.getNPCAt(position);
-  }
+  const inventoryPotion1 = createHealingPotion();
+  const inventoryPotion2 = createHealingPotion();
+  engine.addToInventory(inventoryPotion1);
+  engine.addToInventory(inventoryPotion2);
 
-  /**
-   * Gets all environments in the game
-   */
-  function getEnvironments(): Environment[] {
-    return engine.getEnvironments();
-  }
-
-  /**
-   * Gets an environment at a specific position
-   */
-  function getEnvironmentAt(position: Position): Environment | undefined {
-    return engine.getEnvironmentAt(position);
-  }
-
-  /**
-   * Uses a consumable item from a specific slot (0-2)
-   */
-  function useConsumable(slot: number): void {
-    engine.useConsumableItem(slot);
-  }
-
-  /**
-   * Removes a consumable item from a specific slot (0-2)
-   */
-  function removeConsumable(slot: number): void {
-    engine.removeConsumableItem(slot);
-  }
-
-  /**
-   * Called after any equipment change to advance the game world.
-   * Equipment changes count as a player action, giving enemies a turn to respond.
-   */
-  function onEquipmentChanged(): void {
-    processAllEnemyTurns(engine, level);
-  }
-
-  return {
-    engine,
-    level,
-    movePlayer,
-    getPlayerStats,
-    getEntities,
-    getEntityAt,
-    getNPCs,
-    getNPCAt,
-    getEnvironments,
-    getEnvironmentAt,
-    useConsumable,
-    removeConsumable,
-    onEquipmentChanged,
-  };
+  return buildGameSession(engine, level);
 }
