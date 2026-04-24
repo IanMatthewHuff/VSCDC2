@@ -7,7 +7,9 @@ import * as vscode from "vscode";
 import {
   GameSession,
   createGame,
+  createDungeonCrawl,
   CreateGameOptions,
+  CreateDungeonCrawlOptions,
   getTileAt,
   getDialogHandler,
   getEnvironmentEffect,
@@ -113,12 +115,28 @@ export class GameController {
   }
 
   /**
-   * Start a new game session
+   * Start a new game session with the test level
    * @param options Optional game creation options
    */
   async startGame(options?: CreateGameOptions): Promise<void> {
-    // Create a new game session
-    this.gameSession = createGame(options);
+    const session = createGame(options);
+    await this.initializeGameSession(session);
+  }
+
+  /**
+   * Start a new dungeon crawl session with a procedurally generated level
+   * @param options Optional dungeon crawl options
+   */
+  async startDungeonCrawl(options?: CreateDungeonCrawlOptions): Promise<void> {
+    const session = createDungeonCrawl(options);
+    await this.initializeGameSession(session);
+  }
+
+  /**
+   * Initialize a game session (shared by startGame and startDungeonCrawl)
+   */
+  private async initializeGameSession(session: GameSession): Promise<void> {
+    this.gameSession = session;
     this.documentProvider.setGameSession(this.gameSession);
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
     this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());

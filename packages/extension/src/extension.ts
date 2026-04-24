@@ -98,6 +98,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.startDungeonCrawl", async () => {
+      await gameController?.startDungeonCrawl();
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("vscdc.moveUp", () => {
       gameController?.moveUp();
     })
