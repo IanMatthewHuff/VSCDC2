@@ -74,10 +74,22 @@ Do **not** use Node.js-specific APIs anywhere in the codebase:
 - Update package-level `DESIGN.md` files for package-specific design choices
 - Document the "why" behind decisions, not just the "what"
 
+## Roadmap & Planned Work
+
+- **Consult `ROADMAP.md`** (at the repo root) before starting a new feature — it tracks candidate features, in-progress work, and shipped items, with pros/cons for each candidate.
+- When the user asks "what should we build next?" or for feature ideas, **read `ROADMAP.md` first** and ground suggestions in its candidate list rather than inventing new ones from scratch.
+- When a roadmap candidate is picked up, move it from "Candidate Features" to "In Progress" (link the tracking issue/PR). When it ships, move it to "Shipped" with a one-line summary and PR link.
+- When new ideas come up mid-task that are out of scope, add them to "Candidate Features" with brief pros/cons so future contributors have context.
+- Keep `ROADMAP.md` in sync with the `Planned` / `Implementation Status` sections of the package `DESIGN.md` files.
+
 <instructions>
 <instruction>
 <description>Read this file to understand the overall project architecture, design decisions, and component boundaries for the VS Code Roguelike project. Load when working on cross-cutting concerns or architectural decisions.</description>
 <file>DESIGN.md</file>
+</instruction>
+<instruction>
+<description>Read this file when planning new features or answering questions about what to build next. It tracks candidate features (with pros/cons), in-progress work, and shipped items. Always check here before proposing new feature ideas.</description>
+<file>ROADMAP.md</file>
 </instruction>
 <instruction>
 <description>Read when working on the engine package to understand core systems, API design, and engine internals.</description>
