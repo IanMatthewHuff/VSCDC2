@@ -113,7 +113,18 @@ export function processAllEnemyTurns(engine: GameEngine, level: Level): void {
     if (enemy.type === "target_dummy") {
       continue; // Target dummies don't move or attack
     }
-    
-    processEnemyTurn(enemy, engine, level);
+
+    // Re-fetch the enemy from the engine before processing its turn.
+    // `enemies` is a Redux snapshot taken before the loop began; once any
+    // prior iteration dispatches an action (move, attack, removal), the
+    // captured references go stale. Reading from the store keeps each
+    // enemy's state authoritative and guards against acting on a removed
+    // entity.
+    const current = engine.getEntityById(enemy.id);
+    if (!current) {
+      continue;
+    }
+
+    processEnemyTurn(current, engine, level);
   }
 }
