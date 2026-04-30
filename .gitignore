@@ -26,3 +26,6 @@ Thumbs.db
 
 # Manual test files (temporary)
 **/test.ts
+
+# Eval Hooks
+.github/hooks/eval.json
