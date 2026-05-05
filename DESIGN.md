@@ -378,6 +378,8 @@ We've implemented a dialog system for NPC interactions:
   - Example: Lava tiles could show a light red background behind the floor character
   - Example: Poison clouds could have a green tint
   - This adds visual richness without breaking monospace alignment
+ 
+Just adding some text here to create a test PR, not really for using. DON'T COMMIT
 
 **In Tree Views, Status Bar, Quick Picks**:
 - Codicons freely used (`$(heart)` for HP, `$(sword)` for attack, etc.)
