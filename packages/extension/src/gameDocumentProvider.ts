@@ -4,7 +4,7 @@
  */
 
 import * as vscode from "vscode";
-import { GameSession } from "@vscdc/game";
+import { GameSession, ItemTypeEnum } from "@vscdc/game";
 
 /**
  * Provides text content for the game view document
@@ -60,6 +60,7 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     const playerState = engine.getState().player;
     const entities = session.getEntities();
     const npcs = session.getNPCs();
+    const floorItems = session.getFloorItems();
 
     // Create a map of positions to entities for quick lookup
     const entityPositions = new Map<string, { displayChar: string }>();
@@ -74,6 +75,16 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
       entityPositions.set(key, npc);
     }
 
+    // Floor items render below entities/NPCs and the player. Use "!" for
+    // consumables and "[" for equipment so loot is visually distinct from
+    // creatures and tiles.
+    const floorItemPositions = new Map<string, string>();
+    for (const fi of floorItems) {
+      const key = `${fi.position.x},${fi.position.y}`;
+      const char = fi.item.type === ItemTypeEnum.Consumable ? "!" : "[";
+      floorItemPositions.set(key, char);
+    }
+
     const lines: string[] = [];
 
     // Header with game info
@@ -85,18 +96,25 @@ export class GameDocumentProvider implements vscode.TextDocumentContentProvider 
     for (let y = 0; y < level.height; y++) {
       let row = "";
       for (let x = 0; x < level.width; x++) {
+        const key = `${x},${y}`;
         // Show player if at this position (player renders on top)
         if (x === playerPos.x && y === playerPos.y) {
           row += playerState.displayChar;
         } else {
           // Check for entity at this position
-          const entity = entityPositions.get(`${x},${y}`);
+          const entity = entityPositions.get(key);
           if (entity) {
             row += entity.displayChar;
           } else {
-            // Show the tile (environments don't have display characters,
-            // they are only shown via UI decorations/highlighting)
-            row += level.tiles[y][x].displayChar;
+            // Check for floor item next
+            const itemChar = floorItemPositions.get(key);
+            if (itemChar) {
+              row += itemChar;
+            } else {
+              // Show the tile (environments don't have display characters,
+              // they are only shown via UI decorations/highlighting)
+              row += level.tiles[y][x].displayChar;
+            }
           }
         }
       }
