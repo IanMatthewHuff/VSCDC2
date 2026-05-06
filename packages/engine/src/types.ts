@@ -201,6 +201,27 @@ export interface EnvironmentState {
 }
 
 /**
+ * An item placed on the floor at a position in the world.
+ * Picked up automatically when the player walks onto its tile.
+ */
+export interface FloorItem {
+  /** Unique identifier for this floor-item placement */
+  id: string;
+  /** The item that will be added to the player's inventory on pickup */
+  item: EquipmentItem | ConsumableItem;
+  /** Position where this item exists */
+  position: Position;
+}
+
+/**
+ * State for all items currently lying on the floor
+ */
+export interface ItemState {
+  /** Map of position keys (x,y) to floor item */
+  floorItems: Record<string, FloorItem>;
+}
+
+/**
  * Game-specific state (not player)
  */
 export interface Game {
@@ -215,4 +236,5 @@ export interface GameState {
   game: Game;
   entities: EntityState;
   environments: EnvironmentState;
+  items: ItemState;
 }
