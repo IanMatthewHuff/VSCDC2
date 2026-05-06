@@ -16,6 +16,7 @@ export enum GameEventType {
   EXPERIENCE_GAINED = "experience_gained",
   LEVEL_UP = "level_up",
   STAT_POINT_SPENT = "stat_point_spent",
+  ITEM_PICKED_UP = "item_picked_up",
 }
 
 /**
@@ -161,6 +162,24 @@ export interface StatPointSpentEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when the player attempts to pick up a floor item.
+ * Always emitted on a pickup attempt that finds an item — both successes
+ * and inventory-full skips. Stepping onto an empty tile emits nothing.
+ */
+export interface ItemPickedUpEvent extends GameEvent {
+  type: GameEventType.ITEM_PICKED_UP;
+  /** Whether the item was actually added to the player's inventory */
+  picked: boolean;
+  /** Reason a pickup was skipped, if any */
+  reason?: "inventory_full";
+  itemId: string;
+  itemName: string;
+  /** Item type ("consumable" | "equipment") */
+  itemType: string;
+  position: { x: number; y: number };
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -176,4 +195,5 @@ export type AnyGameEvent =
   | EquipmentUnequippedEvent
   | ExperienceGainedEvent
   | LevelUpEvent
-  | StatPointSpentEvent;
+  | StatPointSpentEvent
+  | ItemPickedUpEvent;

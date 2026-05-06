@@ -7,6 +7,7 @@ import playerReducer from "./playerSlice";
 import gameReducer from "./gameSlice";
 import entityReducer from "./entitySlice";
 import environmentReducer from "./environmentSlice";
+import itemReducer from "./itemSlice";
 import { GameState } from "./types";
 import { createEventMiddleware, EventHandler } from "./eventMiddleware";
 import { GameEventType } from "./events";
@@ -47,6 +48,7 @@ export function createGameStore(
       game: gameReducer,
       entities: entityReducer,
       environments: environmentReducer,
+      items: itemReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(createEventMiddleware(eventHandlers)),

@@ -4,7 +4,7 @@
 
 import { Store } from "@reduxjs/toolkit";
 import { createGameStore, CreateStoreOptions } from "./store";
-import { GameState, Enemy, NPC, Position, Environment, EquipmentItem, ConsumableItem, PlayerEquipment } from "./types";
+import { GameState, Enemy, NPC, Position, Environment, EquipmentItem, ConsumableItem, PlayerEquipment, FloorItem } from "./types";
 import { 
   movePlayer, 
   movePlayerBy, 
@@ -49,8 +49,16 @@ import {
   selectEnvironmentAt,
   selectAllEnvironments,
 } from "./environmentSlice";
+import {
+  addFloorItem,
+  removeFloorItem,
+  pickupAttempted,
+  selectFloorItemAt,
+  selectAllFloorItems,
+  selectFloorItemById,
+} from "./itemSlice";
 import { GameEventType, AnyGameEvent } from "./events";
-import { EventHandler, queueAttackEvent, queueEnvironmentDamageEvent, queueExperienceGainEvent, queueStatPointSpentEvent } from "./eventMiddleware";
+import { EventHandler, queueAttackEvent, queueEnvironmentDamageEvent, queueExperienceGainEvent, queueStatPointSpentEvent, queueItemPickupEvent } from "./eventMiddleware";
 
 /**
  * Result of an attack action
@@ -64,6 +72,18 @@ export interface AttackResult {
   targetDestroyed: boolean;
   /** The target that was attacked */
   target: Enemy | undefined;
+}
+
+/**
+ * Result of attempting to pick up an item from the floor at a position.
+ */
+export interface PickUpResult {
+  /** Whether an item was added to the player's inventory */
+  picked: boolean;
+  /** Reason a pickup attempt did not add the item to inventory */
+  reason?: "no_item" | "inventory_full";
+  /** The floor item that was at the position, if any */
+  floorItem?: FloorItem;
 }
 
 /**
@@ -585,6 +605,107 @@ export class GameEngine {
 
     // Apply damage to player
     this.store.dispatch(damagePlayer({ amount: damage }));
+  }
+
+  // ============================================
+  // Floor Items (loot lying on the map)
+  // ============================================
+
+  /**
+   * Place an item on the floor at a specific position.
+   *
+   * @param item The item to place (consumable or equipment)
+   * @param position Where to place the item
+   * @param id Optional id for the floor-item placement; auto-generated if omitted
+   * @returns The id of the placed floor item
+   */
+  public addFloorItem(
+    item: EquipmentItem | ConsumableItem,
+    position: Position,
+    id?: string
+  ): string {
+    const floorItemId = id ?? `floor_item_${item.id}`;
+    this.store.dispatch(
+      addFloorItem({
+        floorItem: { id: floorItemId, item, position: { ...position } },
+      })
+    );
+    return floorItemId;
+  }
+
+  /**
+   * Remove a floor item by its id
+   */
+  public removeFloorItem(id: string): void {
+    this.store.dispatch(removeFloorItem({ id }));
+  }
+
+  /**
+   * Get all floor items currently in the world
+   */
+  public getFloorItems(): FloorItem[] {
+    return selectAllFloorItems(this.store.getState().items);
+  }
+
+  /**
+   * Get the floor item at a specific position, if any
+   */
+  public getFloorItemAt(position: Position): FloorItem | undefined {
+    return selectFloorItemAt(this.store.getState().items, position);
+  }
+
+  /**
+   * Get a floor item by id
+   */
+  public getFloorItemById(id: string): FloorItem | undefined {
+    return selectFloorItemById(this.store.getState().items, id);
+  }
+
+  /**
+   * Attempt to pick up an item at the given position.
+   *
+   * - If no floor item is present, returns { picked: false, reason: "no_item" }
+   *   and emits no event.
+   * - If the inventory is full, the item stays on the floor and returns
+   *   { picked: false, reason: "inventory_full" }; an ITEM_PICKED_UP event with
+   *   picked=false is emitted so the UI can surface the failure.
+   * - Otherwise the item is added to the player's inventory, removed from the
+   *   floor, and an ITEM_PICKED_UP event with picked=true is emitted.
+   */
+  public pickUpItemAt(position: Position): PickUpResult {
+    const floorItem = this.getFloorItemAt(position);
+    if (!floorItem) {
+      return { picked: false, reason: "no_item" };
+    }
+
+    if (this.isInventoryFull()) {
+      // Inventory full: queue the event and dispatch the pickupAttempted
+      // no-op action so the middleware drains and emits it. State is
+      // unchanged; the floor item stays put.
+      queueItemPickupEvent({
+        picked: false,
+        reason: "inventory_full",
+        itemId: floorItem.item.id,
+        itemName: floorItem.item.name,
+        itemType: floorItem.item.type,
+        position: { ...position },
+      });
+      this.store.dispatch(pickupAttempted());
+      return { picked: false, reason: "inventory_full", floorItem };
+    }
+
+    // Successful pickup: queue event, then update state in two dispatches
+    queueItemPickupEvent({
+      picked: true,
+      itemId: floorItem.item.id,
+      itemName: floorItem.item.name,
+      itemType: floorItem.item.type,
+      position: { ...position },
+    });
+    this.store.dispatch(addToInventory({ item: floorItem.item }));
+    this.store.dispatch(removeFloorItem({ id: floorItem.id }));
+
+    return { picked: true, floorItem };
   }
 
   // ============================================
