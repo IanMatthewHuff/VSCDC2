@@ -187,6 +187,18 @@ export function activate(context: vscode.ExtensionContext): void {
     })
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.saveGame", async () => {
+      await gameController?.saveGame();
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.loadGame", async () => {
+      await gameController?.loadGame();
+    })
+  );
+
   console.log(
     `VS Code Dungeon Crawler activated - Game v${GAME_VERSION}, Engine v${getEngineVersion()}`
   );
