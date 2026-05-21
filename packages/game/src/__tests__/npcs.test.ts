@@ -32,11 +32,11 @@ describe("NPC system", () => {
     it("includes the Sage NPC in the level", () => {
       const game = createGame();
       const npcs = game.getNPCs();
-      
-      expect(npcs).toHaveLength(1);
-      expect(npcs[0].name).toBe("Sage");
-      expect(npcs[0].type).toBe("sage");
-      expect(npcs[0].position).toEqual({ x: 1, y: 2 });
+
+      const sage = npcs.find((npc) => npc.type === "sage");
+      expect(sage).toBeDefined();
+      expect(sage?.name).toBe("Sage");
+      expect(sage?.position).toEqual({ x: 1, y: 2 });
     });
 
     it("returns NPC at specific position", () => {

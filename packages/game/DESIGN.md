@@ -49,11 +49,19 @@ Entity definitions for enemies and NPCs:
   - Display character: "S", color: blue
   - `canBeAttacked: false` prevents combat
   - Provides branching dialog interactions
+- **Merchant**: Shop NPC at position (5,3) in the test level
+  - Display character: "M", color: yellow
+  - `canBeAttacked: false`
+  - Uses a Quick Pick "shop" UI instead of the dialog tree
+  - MVP catalog: Healing Potion for 5 gold (see `merchant.ts`)
+  - Player starts with 10 gold so a potion is affordable from turn 1
 
 **Entity Factories**:
 - `createTargetDummy(position)`: Creates stationary training dummy
 - `createGoblin(position)`: Creates active goblin enemy
 - `createSage(position)`: Creates NPC entity
+- `createMerchant(position)`: Creates Merchant NPC; pair with
+  `getMerchantShopItems()` / `purchaseFromMerchant(itemId)` on `GameSession`
 - Each uses unique ID generation for tracking
 
 ### Enemy AI System
