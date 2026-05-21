@@ -16,6 +16,7 @@ import {
   GameEventType,
   EntityDestroyedEvent,
   SeededRandom,
+  FloorItem,
 } from "@vscdc/engine";
 import { createTestLevel, createGeneratedLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
@@ -30,6 +31,7 @@ import {
   createBasicClub, 
   resetItemIdCounter 
 } from "./items";
+import { spawnDungeonLoot } from "./loot";
 
 export const GAME_VERSION = "0.0.1";
 
@@ -56,8 +58,9 @@ export type {
   ConsumableItem,
   EquipmentItem,
   PlayerEquipment,
+  FloorItem,
 } from "@vscdc/engine";
-export { EquipmentSlotEnum, ItemTypeEnum } from "@vscdc/engine";
+export { EquipmentSlotEnum, ItemTypeEnum, GameEventType } from "@vscdc/engine";
 
 // Re-export NPC and dialog types
 export { createSage, initializeNPCDialogs } from "./npcs";
@@ -152,6 +155,10 @@ export interface GameSession {
   getEnvironments: () => Environment[];
   /** Get environment at a specific position */
   getEnvironmentAt: (position: Position) => Environment | undefined;
+  /** Get all items lying on the floor of the level */
+  getFloorItems: () => FloorItem[];
+  /** Get the floor item at a specific position, if any */
+  getFloorItemAt: (position: Position) => FloorItem | undefined;
   /** Use a consumable item from a specific slot (0-2) */
   useConsumable: (slot: number) => void;
   /** Remove a consumable item from a specific slot (0-2) */
@@ -265,6 +272,11 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
         }
       }
 
+      // Auto-pickup any item on the tile we just stepped onto. The engine
+      // emits ITEM_PICKED_UP events so the UI can react; if inventory is
+      // full the move still succeeds and the item stays on the floor.
+      engine.pickUpItemAt(targetPosition);
+
       processAllEnemyTurns(engine, level);
 
       return {
@@ -321,6 +333,14 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     return engine.getEnvironmentAt(position);
   }
 
+  function getFloorItems(): FloorItem[] {
+    return engine.getFloorItems();
+  }
+
+  function getFloorItemAt(position: Position): FloorItem | undefined {
+    return engine.getFloorItemAt(position);
+  }
+
   function useConsumable(slot: number): void {
     engine.useConsumableItem(slot);
   }
@@ -344,6 +364,8 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     getNPCAt,
     getEnvironments,
     getEnvironmentAt,
+    getFloorItems,
+    getFloorItemAt,
     useConsumable,
     removeConsumable,
     onEquipmentChanged,
@@ -419,6 +441,12 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   engine.addToInventory(inventoryPotion1);
   engine.addToInventory(inventoryPotion2);
 
+  // Drop a sample healing potion on the floor near (but not on) the player
+  // start so manual playtests can exercise the pickup flow.
+  // Player start is (3,3); place the potion at (3,4) which is a floor tile.
+  const floorPotion = createHealingPotion();
+  engine.addFloorItem(floorPotion, { x: 3, y: 4 });
+
   // Give player starting XP so killing the goblin triggers a level up
   // Goblin gives 20 XP, player needs 100 XP to level up, so start with 80 XP
   engine.grantExperience(80, "Starting experience");
@@ -450,11 +478,12 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
 
   // Place a goblin in a random non-start room
   const rooms = level.rooms ?? [];
+  let placementRng: SeededRandom | null = null;
   if (rooms.length > 1) {
-    const rng = new SeededRandom(options.seed ?? Date.now());
+    placementRng = new SeededRandom(options.seed ?? Date.now());
     // Advance RNG past the dungeon generation sequence
     // Pick a room index from 1..rooms.length-1 (skip room 0 = player start)
-    const goblinRoomIdx = rng.nextInt(1, rooms.length - 1);
+    const goblinRoomIdx = placementRng.nextInt(1, rooms.length - 1);
     const goblinRoom = rooms[goblinRoomIdx];
     const goblinPos = {
       x: Math.floor(goblinRoom.x + goblinRoom.width / 2),
@@ -469,7 +498,7 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
       .filter(({ idx }) => idx !== 0 && idx !== goblinRoomIdx);
 
     if (availableRooms.length > 0) {
-      const lavaChoice = availableRooms[rng.nextInt(0, availableRooms.length - 1)];
+      const lavaChoice = availableRooms[placementRng.nextInt(0, availableRooms.length - 1)];
       const lavaRoom = lavaChoice.room;
       const lavaPos = {
         x: Math.floor(lavaRoom.x + lavaRoom.width / 2),
@@ -478,6 +507,17 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
       const lava = createLavaEnvironment(lavaPos);
       engine.addEnvironment(lava);
     }
+  }
+
+  // Spawn loot in non-start rooms (loot may share a room with the goblin or
+  // lava, but spawnDungeonLoot avoids placing on top of those occupants).
+  if (placementRng && rooms.length > 0) {
+    spawnDungeonLoot(engine, {
+      rooms,
+      excludedRoomIndices: [0], // skip the player start room
+      playerStart: level.playerStart,
+      rng: placementRng,
+    });
   }
 
   // Give player the same starting equipment as createGame()

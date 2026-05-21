@@ -218,13 +218,18 @@ The environment system enables tiles to have environmental effects that can affe
 6. Engine emits environment events for UI consumption
 
 ### Items
-*TODO: Document item definition format*
+**Status: Implemented (factories + floor spawning)**
 
-Per DESIGN.md, we're starting minimal:
-- Basic player character
-- A couple of enemy types
-- Simple melee combat
-- One NPC with dialog
-- Environment effects (lava)
+Item factories (`items.ts`) produce `EquipmentItem` and `ConsumableItem` instances (e.g., `createHealingPotion`, `createIronSword`). These are then placed on the dungeon floor by the loot module so the player can pick them up by walking onto the tile.
 
-Expand only after the foundation is solid.
+**Loot Spawning** (`loot.ts`):
+- `spawnDungeonLoot(engine, rooms, rng, playerStartRoomIdx)` selects 1–3 non-start rooms via Fisher-Yates shuffle, picks a random tile in each, and drops an item from a weighted table:
+  - 50% consumable (healing potion)
+  - ~25% defense gear (leather armor, iron helmet, wooden shield)
+  - ~25% weapons (iron sword, basic club)
+- Tiles already occupied by enemies, environments (lava), other floor items, or the player start are skipped. If a room has no free tile after several attempts, it is silently dropped.
+- Determinism: the dungeon-crawl factory shares a single `SeededRandom` between goblin / lava / loot placement so the same seed reproduces the same world.
+
+**Pickup Integration**:
+- `buildGameSession.movePlayer` calls `engine.pickUpItemAt(targetPosition)` after a successful walkable move. The engine emits `ITEM_PICKED_UP` (success or `inventory_full`) so the extension can log to the Game Log channel.
+

@@ -33,6 +33,7 @@ import {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  ItemPickedUpEvent,
   AnyGameEvent,
   StatType,
 } from "@vscdc/engine";
@@ -333,6 +334,24 @@ export class GameController {
       }
     );
     this.eventUnsubscribers.push(unsubStatSpent);
+
+    // Subscribe to item pickup events. Successful pickups log a confirmation;
+    // pickups blocked by a full inventory log a distinct warning so the
+    // player knows the item is still on the floor.
+    const unsubItemPickup = engine.onEvent(
+      GameEventType.ITEM_PICKED_UP,
+      (event: AnyGameEvent) => {
+        const pickupEvent = event as ItemPickedUpEvent;
+        if (pickupEvent.picked) {
+          this.logOther(`Picked up ${pickupEvent.itemName}`);
+        } else if (pickupEvent.reason === "inventory_full") {
+          this.logOther(
+            `Inventory full — left ${pickupEvent.itemName} on the floor`
+          );
+        }
+      }
+    );
+    this.eventUnsubscribers.push(unsubItemPickup);
   }
 
   /**
@@ -559,6 +578,11 @@ export class GameController {
     // Update player stats and equipment after any action
     this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
     this.equipmentTreeProvider.setEquipment(this.gameSession.engine.getPlayerEquipment());
+    // Refresh inventory tree — moves can pick up floor items
+    this.inventoryTreeProvider.setInventory(
+      this.gameSession.engine.getInventory(),
+      this.gameSession.engine.getInventoryCapacity()
+    );
 
     // Update cursor location after movement
     this.updateCursorLocation();
