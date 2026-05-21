@@ -2,7 +2,7 @@
  * Store factory - creates and configures the Redux store
  */
 
-import { configureStore, Store } from "@reduxjs/toolkit";
+import { combineReducers, configureStore, Reducer, Store, AnyAction } from "@reduxjs/toolkit";
 import playerReducer from "./playerSlice";
 import gameReducer from "./gameSlice";
 import entityReducer from "./entitySlice";
@@ -10,6 +10,21 @@ import environmentReducer from "./environmentSlice";
 import { GameState } from "./types";
 import { createEventMiddleware, EventHandler } from "./eventMiddleware";
 import { GameEventType } from "./events";
+
+/**
+ * Action type used to replace the entire engine state from a deserialized
+ * snapshot. This is dispatched by `GameEngine.loadState()` to restore a
+ * previously saved game.
+ */
+export const LOAD_STATE_ACTION_TYPE = "engine/loadState";
+
+/**
+ * Action that replaces the entire engine state with the provided snapshot.
+ */
+export interface LoadStateAction {
+  type: typeof LOAD_STATE_ACTION_TYPE;
+  payload: GameState;
+}
 
 /**
  * Options for creating a game store
@@ -41,13 +56,24 @@ export function createGameStore(
     eventHandlers.set(eventType, new Set());
   });
 
+  const combinedReducer = combineReducers({
+    player: playerReducer,
+    game: gameReducer,
+    entities: entityReducer,
+    environments: environmentReducer,
+  });
+
+  // Wrap the combined reducer so the LOAD_STATE action can replace the
+  // entire state in one go (used by save/load).
+  const rootReducer: Reducer<GameState, AnyAction> = (state, action) => {
+    if (action.type === LOAD_STATE_ACTION_TYPE) {
+      return (action as LoadStateAction).payload;
+    }
+    return combinedReducer(state, action) as GameState;
+  };
+
   const store = configureStore({
-    reducer: {
-      player: playerReducer,
-      game: gameReducer,
-      entities: entityReducer,
-      environments: environmentReducer,
-    },
+    reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(createEventMiddleware(eventHandlers)),
     devTools: enableDevTools,
