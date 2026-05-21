@@ -16,6 +16,7 @@ import {
   GameEventType,
   EntityDestroyedEvent,
   SeededRandom,
+  GameState,
 } from "@vscdc/engine";
 import { createTestLevel, createGeneratedLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
@@ -499,4 +500,98 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
   engine.addToInventory(inventoryPotion2);
 
   return buildGameSession(engine, level);
+}
+
+// ============================================
+// Save / Load
+// ============================================
+
+/**
+ * Current save file schema version.
+ *
+ * Bumped whenever the on-disk save format changes in a non-backwards-
+ * compatible way. Loaders should refuse files whose `version` they don't
+ * understand.
+ */
+export const SAVE_VERSION = 1;
+
+/**
+ * Serialized snapshot of a {@link GameSession}.
+ *
+ * Designed to be plain JSON so it can be written to disk via
+ * `JSON.stringify` and read back via `JSON.parse`.
+ */
+export interface GameSaveData {
+  /** Save format version. See {@link SAVE_VERSION}. */
+  version: number;
+  /** ISO timestamp of when the save was created. */
+  savedAt: string;
+  /** The level (map) the player was on, including tiles and rooms. */
+  level: Level;
+  /** Full engine state: player, entities, NPCs, environments, turn count. */
+  state: GameState;
+}
+
+/**
+ * Capture a snapshot of the current game session for persistence.
+ *
+ * @param session The active game session to serialize.
+ * @returns A JSON-serializable {@link GameSaveData} object.
+ */
+export function serializeGameSession(session: GameSession): GameSaveData {
+  return {
+    version: SAVE_VERSION,
+    savedAt: new Date().toISOString(),
+    // Deep-clone via JSON round-trip so callers can mutate the live session
+    // without disturbing the saved snapshot.
+    level: JSON.parse(JSON.stringify(session.level)) as Level,
+    state: JSON.parse(JSON.stringify(session.engine.getState())) as GameState,
+  };
+}
+
+/**
+ * Error thrown when a save file cannot be loaded.
+ */
+export class InvalidSaveDataError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidSaveDataError";
+  }
+}
+
+/**
+ * Restore a game session from a previously serialized snapshot.
+ *
+ * Recreates the engine, replays the saved Redux state, and rebuilds the
+ * session wrapper around the saved level. Global registries (dialog
+ * handlers, environment effects) are re-initialized so the restored
+ * session is fully functional.
+ *
+ * @param save The save data, typically read from disk.
+ * @returns A new {@link GameSession} matching the saved state.
+ * @throws {InvalidSaveDataError} If the save data is malformed or uses an
+ *   unsupported schema version.
+ */
+export function loadGameSession(save: GameSaveData): GameSession {
+  if (!save || typeof save !== "object") {
+    throw new InvalidSaveDataError("Save data is missing or not an object");
+  }
+  if (save.version !== SAVE_VERSION) {
+    throw new InvalidSaveDataError(
+      `Unsupported save version: ${save.version} (expected ${SAVE_VERSION})`
+    );
+  }
+  if (!save.level || !save.state) {
+    throw new InvalidSaveDataError("Save data is missing required fields");
+  }
+
+  // Re-initialize global registries so the restored session behaves like a
+  // freshly created one (dialog handlers, environment effects).
+  initializeEnvironmentEffects();
+  initializeNPCDialogs();
+
+  const engine = new GameEngine({ enableDevTools: false });
+  engine.loadState(save.state);
+
+  return buildGameSession(engine, save.level);
 }
