@@ -25,6 +25,8 @@ import {
   removeConsumable,
   grantExperience,
   spendStatPoint,
+  addGold,
+  spendGold,
   getXpForNextLevel,
   StatType,
 } from "./playerSlice";
@@ -655,5 +657,39 @@ export class GameEngine {
    */
   public canSpendStatPoints(): boolean {
     return this.getPlayerStatPoints() > 0;
+  }
+
+  /**
+   * Get the player's current gold (currency)
+   */
+  public getPlayerGold(): number {
+    return this.store.getState().player.gold;
+  }
+
+  /**
+   * Add gold to the player's currency total
+   * @param amount Positive amount of gold to add
+   */
+  public addPlayerGold(amount: number): void {
+    if (amount <= 0) {
+      return;
+    }
+    this.store.dispatch(addGold({ amount }));
+  }
+
+  /**
+   * Spend gold from the player's currency total
+   * @param amount Positive amount of gold to spend
+   * @returns true if the gold was spent, false if the player could not afford it
+   */
+  public spendPlayerGold(amount: number): boolean {
+    if (amount <= 0) {
+      return false;
+    }
+    if (this.getPlayerGold() < amount) {
+      return false;
+    }
+    this.store.dispatch(spendGold({ amount }));
+    return true;
   }
 }

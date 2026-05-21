@@ -57,6 +57,7 @@ const initialPlayerState: Player = {
   level: 1,
   experience: 0,
   statPoints: 0,
+  gold: 0,
 };
 
 /**
@@ -218,6 +219,27 @@ export const playerSlice = createSlice({
       }
       state.statPoints -= 1;
     },
+    /**
+     * Add gold to the player's currency total
+     * Negative amounts are ignored to keep this reducer additive only.
+     */
+    addGold: (state, action: PayloadAction<{ amount: number }>) => {
+      const amount = action.payload.amount;
+      if (amount > 0) {
+        state.gold += amount;
+      }
+    },
+    /**
+     * Spend gold from the player's currency total.
+     * Does nothing if the player cannot afford the amount; callers should
+     * check `state.player.gold` (or use the engine API) before dispatching.
+     */
+    spendGold: (state, action: PayloadAction<{ amount: number }>) => {
+      const amount = action.payload.amount;
+      if (amount > 0 && state.gold >= amount) {
+        state.gold -= amount;
+      }
+    },
   },
 });
 
@@ -241,5 +263,7 @@ export const {
   removeConsumable,
   grantExperience,
   spendStatPoint,
+  addGold,
+  spendGold,
 } = playerSlice.actions;
 export default playerSlice.reducer;
