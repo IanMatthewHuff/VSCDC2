@@ -69,6 +69,58 @@ describe("GameDocumentProvider", () => {
       // Should have floors (.)
       expect(content).toContain(".");
     });
+
+    it("renders a consumable floor item with !", () => {
+      const gameSession = createGame();
+      provider.setGameSession(gameSession);
+
+      // createGame seeds a floor potion at (3, 4) — see packages/game/src/index.ts
+      const content = provider.provideTextDocumentContent(GAME_DOCUMENT_URI);
+      expect(content).toContain("!");
+    });
+
+    it("renders an equipment floor item with [", () => {
+      const gameSession = createGame();
+      // Drop an equipment item on a floor tile far from the player and other entities
+      gameSession.engine.addFloorItem(
+        {
+          id: "test_sword",
+          name: "Test Sword",
+          // Use the engine's enum value via game re-export indirectly: rely on string
+          type: "equipment",
+          slot: "rightArm",
+          attack: 1,
+        } as never,
+        { x: 5, y: 5 }
+      );
+      provider.setGameSession(gameSession);
+
+      const content = provider.provideTextDocumentContent(GAME_DOCUMENT_URI);
+      expect(content).toContain("[");
+    });
+
+    it("renders the player on top of a floor item", () => {
+      const gameSession = createGame();
+      // Player starts at (3,3); place a floor item on the player's tile
+      gameSession.engine.addFloorItem(
+        {
+          id: "test_potion_under_player",
+          name: "Hidden Potion",
+          type: "consumable",
+          effect: { type: "heal", amount: 1 },
+        } as never,
+        { x: 3, y: 3 }
+      );
+      provider.setGameSession(gameSession);
+
+      const content = provider.provideTextDocumentContent(GAME_DOCUMENT_URI);
+      // Player char "@" still visible
+      expect(content).toContain("@");
+      // Tile rendering for player position should be "@" not "!", check the
+      // grid line that contains the player. We split off the header.
+      const gridLines = content.split("\n").slice(3); // header + Turn + blank
+      expect(gridLines[3]?.[3]).toBe("@");
+    });
   });
 
   describe("setGameSession", () => {

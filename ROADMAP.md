@@ -67,6 +67,8 @@ Spawn items on the floor in generated dungeons. Walking onto a tile with an item
 - Quick Pick UI for "use item" is another small UI surface to design
 - May surface gaps in the equipment/inventory model that expand scope
 
+> **Note:** floor-spawn + auto-pickup is now shipped (see Shipped section). A "use item" Quick Pick command remains as a follow-up candidate.
+
 ---
 
 ### Save / Load (single slot per workspace)
@@ -122,6 +124,7 @@ Pure content expansion: a second active enemy with different stats or a ranged a
 
 ## Shipped
 
+- **Item Pickups** — Floor items spawn in dungeon rooms and are auto-picked up when the player walks onto the tile. New `itemSlice` + `ITEM_PICKED_UP` event in the engine, weighted loot table in the game package, `!`/`[` rendering and Game Log entries in the extension. Inventory-full case logs a warning and leaves the item on the floor.
 - **BSP Dungeon Generator** ([PR #9](https://github.com/IanMatthewHuff/VSCDC2/pull/9)) — Seeded PRNG + BSP procedural level generation, `createDungeonCrawl()` session factory, `vscdc.startDungeonCrawl` command.
 - **Player Leveling** ([PR #8](https://github.com/IanMatthewHuff/VSCDC2/pull/8)) — XP from kills/floors, stat points allocation, level-up UI.
 
