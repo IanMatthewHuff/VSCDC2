@@ -40,6 +40,9 @@ The Redux store is organized into slices:
   },
   environments: {
     environments: Record<string, Environment>  // Keyed by "x,y"
+  },
+  items: {
+    floorItems: Record<string, FloorItem>  // Items on the dungeon floor
   }
 }
 ```
@@ -140,6 +143,7 @@ Future additions:
 - ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
 - ✓ Leveling system with XP, levels, and stat point allocation
 - ✓ Leveling event types (EXPERIENCE_GAINED, LEVEL_UP, STAT_POINT_SPENT)
+- ✓ Floor item slice and pickup API (`pickUpItemAt`, ITEM_PICKED_UP event)
 - ✓ Comprehensive test suite for core functionality
 
 ### Planned
@@ -198,6 +202,7 @@ Custom middleware that emits game events for UI consumption:
 - `ENVIRONMENT_DAMAGE`: Emitted when an environment deals damage to the player
 - `EQUIPMENT_EQUIPPED`: Emitted when equipment is equipped to a slot
 - `EQUIPMENT_UNEQUIPPED`: Emitted when equipment is removed from a slot
+- `ITEM_PICKED_UP`: Emitted on a pickup attempt (success or skip). Carries `picked: boolean`, optional `reason: "inventory_full"`, plus item metadata.
 
 **Event Flow**:
 1. Action dispatched to Redux store
@@ -246,6 +251,25 @@ interface Environment {
 - Middleware automatically detects when player enters environment
 - Game layer is responsible for interpreting and applying effects
 - UI layer logs environment interactions to combat log
+
+### Floor Item System
+**Status: Implemented**
+
+Manages items lying on the dungeon floor that the player can pick up.
+
+**Item Slice** (`itemSlice.ts`):
+- Manages a collection of `FloorItem` records keyed by id.
+- Actions: `addFloorItem`, `removeFloorItem`, `clearFloorItems`, `pickupAttempted` (no-op).
+- Selectors: `selectFloorItemAt`, `selectAllFloorItems`, `selectFloorItemById`.
+
+The `pickupAttempted` reducer is a no-op that exists solely so the engine can flow inventory-full pickup attempts through the standard middleware drain. The pickup queue holds the pending `ITEM_PICKED_UP` event; the dispatch (even of a no-op) gives the middleware an action to drain on. This keeps every event flowing through the same path — the engine never bypasses the middleware with direct emits.
+
+**Pickup Flow** (`engine.pickUpItemAt(position)`):
+1. If no floor item at position → returns `{ picked: false, reason: "no_item" }`. No event emitted.
+2. If inventory full → queues `ITEM_PICKED_UP` (with `picked: false, reason: "inventory_full"`), dispatches `pickupAttempted`. Item stays on the floor.
+3. Otherwise → queues `ITEM_PICKED_UP` (with `picked: true`), dispatches `addToInventory` then `removeFloorItem`. Item moves into the player's inventory.
+
+The game layer wires `pickUpItemAt` into the move flow so movement onto a floor-item tile triggers an automatic pickup attempt.
 
 ### Map System
 *Placeholder*

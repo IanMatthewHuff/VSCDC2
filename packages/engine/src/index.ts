@@ -9,7 +9,7 @@ export const ENGINE_VERSION = "0.0.1";
 
 // Export main engine class
 export { GameEngine } from "./engine";
-export type { AttackResult } from "./engine";
+export type { AttackResult, PickUpResult } from "./engine";
 
 // Export types
 export type {
@@ -31,6 +31,8 @@ export type {
   EquipmentItem,
   EquipmentSlot,
   PlayerEquipment,
+  FloorItem,
+  ItemState,
 } from "./types";
 export { ItemType as ItemTypeEnum, EquipmentSlot as EquipmentSlotEnum, DEFAULT_INVENTORY_CAPACITY } from "./types";
 export type { CreateStoreOptions } from "./store";
@@ -50,6 +52,7 @@ export type {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  ItemPickedUpEvent,
   AnyGameEvent,
 } from "./events";
 
@@ -85,6 +88,7 @@ export type { StatType } from "./playerSlice";
 export { incrementTurn, resetTurn } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";
+export { addFloorItem, removeFloorItem, clearFloorItems, selectFloorItemAt, selectAllFloorItems } from "./itemSlice";
 
 // Export seeded random
 export { SeededRandom } from "./random";

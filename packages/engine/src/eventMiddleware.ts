@@ -18,6 +18,7 @@ import {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  ItemPickedUpEvent,
   AnyGameEvent,
 } from "./events";
 import { selectEnvironmentAt } from "./environmentSlice";
@@ -64,6 +65,18 @@ interface PendingStatPointSpent {
 }
 
 /**
+ * Pending item pickup event to be emitted after state update
+ */
+interface PendingItemPickup {
+  picked: boolean;
+  reason?: "inventory_full";
+  itemId: string;
+  itemName: string;
+  itemType: string;
+  position: { x: number; y: number };
+}
+
+/**
  * Store for pending attack events (filled by action, emitted by middleware)
  */
 let pendingAttacks: PendingAttack[] = [];
@@ -82,6 +95,11 @@ let pendingExperienceGains: PendingExperienceGain[] = [];
  * Store for pending stat point spent events
  */
 let pendingStatPointsSpent: PendingStatPointSpent[] = [];
+
+/**
+ * Store for pending item pickup events
+ */
+let pendingItemPickups: PendingItemPickup[] = [];
 
 /**
  * Queue an attack event to be emitted after the action is processed
@@ -109,6 +127,13 @@ export function queueExperienceGainEvent(gain: PendingExperienceGain): void {
  */
 export function queueStatPointSpentEvent(spent: PendingStatPointSpent): void {
   pendingStatPointsSpent.push(spent);
+}
+
+/**
+ * Queue an item pickup event to be emitted after the action is processed
+ */
+export function queueItemPickupEvent(pickup: PendingItemPickup): void {
+  pendingItemPickups.push(pickup);
 }
 
 /**
@@ -312,6 +337,22 @@ export function createEventMiddleware(
         emitEvent(eventHandlers, equipEvent);
       }
     }
+
+    // Emit item pickup events for any pending pickups
+    for (const pickup of pendingItemPickups) {
+      const pickupEvent: ItemPickedUpEvent = {
+        type: GameEventType.ITEM_PICKED_UP,
+        timestamp: Date.now(),
+        picked: pickup.picked,
+        reason: pickup.reason,
+        itemId: pickup.itemId,
+        itemName: pickup.itemName,
+        itemType: pickup.itemType,
+        position: { ...pickup.position },
+      };
+      emitEvent(eventHandlers, pickupEvent);
+    }
+    pendingItemPickups = [];
 
     // Always emit state changed event
     const stateChangedEvent: StateChangedEvent = {
