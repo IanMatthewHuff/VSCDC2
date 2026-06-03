@@ -3,7 +3,7 @@
  */
 
 import { Store } from "@reduxjs/toolkit";
-import { createGameStore, CreateStoreOptions } from "./store";
+import { createGameStore, CreateStoreOptions, LOAD_STATE_ACTION_TYPE } from "./store";
 import { GameState, Enemy, NPC, Position, Environment, EquipmentItem, ConsumableItem, PlayerEquipment } from "./types";
 import { 
   movePlayer, 
@@ -113,6 +113,18 @@ export class GameEngine {
    */
   public getState(): GameState {
     return this.store.getState();
+  }
+
+  /**
+   * Replace the entire engine state with a previously saved snapshot.
+   *
+   * The state is plain JSON (see {@link GameState}) so callers can persist
+   * `getState()` directly and pass it back here to restore a saved game.
+   * Event handlers and subscribers registered on the engine are preserved
+   * across loads.
+   */
+  public loadState(state: GameState): void {
+    this.store.dispatch({ type: LOAD_STATE_ACTION_TYPE, payload: state });
   }
 
   /**
