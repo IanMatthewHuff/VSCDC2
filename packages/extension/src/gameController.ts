@@ -21,6 +21,11 @@ import {
   EquipmentItem as GameEquipmentItem,
   ConsumableItem,
   ItemTypeEnum,
+  GameSaveData,
+  SAVE_VERSION,
+  serializeGameSession,
+  loadGameSession,
+  InvalidSaveDataError,
 } from "@vscdc/game";
 import {
   GameEventType,
@@ -46,6 +51,13 @@ import { CursorLocationTreeProvider } from "./cursorLocationTreeProvider";
  * Context key that indicates when the game is active
  */
 export const GAME_ACTIVE_CONTEXT = "vscdc.gameActive";
+
+/**
+ * Filename used for the per-workspace save file. The file is written to the
+ * root of the first workspace folder. Users can move/back up this file as
+ * they wish.
+ */
+export const SAVE_FILE_NAME = ".vscdc-save.json";
 
 /**
  * Output channels for game logging
@@ -954,6 +966,106 @@ export class GameController {
       // Update UI
       this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
     }
+  }
+
+  /**
+   * Resolve the URI to the workspace save file (`.vscdc-save.json` in the
+   * root of the first workspace folder).
+   *
+   * @returns The save file URI, or `null` if there is no open workspace.
+   */
+  private getSaveFileUri(): vscode.Uri | null {
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders || folders.length === 0) {
+      return null;
+    }
+    return vscode.Uri.joinPath(folders[0].uri, SAVE_FILE_NAME);
+  }
+
+  /**
+   * Save the current game session to a JSON file in the workspace.
+   *
+   * The save includes the level layout (tiles, rooms), the player (stats,
+   * equipment, inventory, XP), all enemies, NPCs, environments, and the
+   * turn count. Writes to `.vscdc-save.json` in the workspace root.
+   */
+  async saveGame(): Promise<void> {
+    if (!this.gameSession) {
+      vscode.window.showWarningMessage("No active game to save. Start a game first.");
+      return;
+    }
+
+    const uri = this.getSaveFileUri();
+    if (!uri) {
+      vscode.window.showErrorMessage(
+        "Cannot save game: please open a workspace folder first."
+      );
+      return;
+    }
+
+    const save = serializeGameSession(this.gameSession);
+    const json = JSON.stringify(save, null, 2);
+    const bytes = new TextEncoder().encode(json);
+
+    try {
+      await vscode.workspace.fs.writeFile(uri, bytes);
+      vscode.window.showInformationMessage(`Game saved to ${SAVE_FILE_NAME}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Failed to save game: ${message}`);
+    }
+  }
+
+  /**
+   * Load a game session from the workspace save file.
+   *
+   * Reads `.vscdc-save.json` from the workspace root, restores the engine
+   * state and level, and re-attaches all UI views.
+   */
+  async loadGame(): Promise<void> {
+    const uri = this.getSaveFileUri();
+    if (!uri) {
+      vscode.window.showErrorMessage(
+        "Cannot load game: please open a workspace folder first."
+      );
+      return;
+    }
+
+    let raw: Uint8Array;
+    try {
+      raw = await vscode.workspace.fs.readFile(uri);
+    } catch (err) {
+      vscode.window.showErrorMessage(
+        `No save file found at ${SAVE_FILE_NAME}.`
+      );
+      return;
+    }
+
+    let save: GameSaveData;
+    try {
+      const text = new TextDecoder().decode(raw);
+      save = JSON.parse(text) as GameSaveData;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Save file is not valid JSON: ${message}`);
+      return;
+    }
+
+    let session: GameSession;
+    try {
+      session = loadGameSession(save);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`Failed to load save: ${message}`);
+      return;
+    }
+
+    // Clean up the previous session before installing the new one so we
+    // don't leak event handlers from the old engine.
+    this.unsubscribeFromEvents();
+
+    await this.initializeGameSession(session);
+    vscode.window.showInformationMessage(`Game loaded from ${SAVE_FILE_NAME}`);
   }
 
   dispose(): void {
