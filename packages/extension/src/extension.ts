@@ -128,6 +128,12 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("vscdc.descendFloor", () => {
+      gameController?.descendFloor();
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("vscdc.useConsumable0", () => {
       gameController?.useConsumable(0);
     })
