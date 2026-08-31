@@ -106,6 +106,18 @@
         "title": "Spend Stat Points",
         "category": "Dungeon Crawler",
         "icon": "$(sparkle)"
+      },
+      {
+        "command": "vscdc.saveGame",
+        "title": "Save Game",
+        "category": "Dungeon Crawler",
+        "icon": "$(save)"
+      },
+      {
+        "command": "vscdc.loadGame",
+        "title": "Load Game",
+        "category": "Dungeon Crawler",
+        "icon": "$(folder-opened)"
       }
     ],
     "keybindings": [
