@@ -33,6 +33,7 @@ import {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  FloorDescendedEvent,
   AnyGameEvent,
   StatType,
 } from "@vscdc/engine";
@@ -333,6 +334,19 @@ export class GameController {
       }
     );
     this.eventUnsubscribers.push(unsubStatSpent);
+
+    // Subscribe to floor transitions
+    const unsubFloorDescended = engine.onEvent(
+      GameEventType.FLOOR_DESCENDED,
+      (event: AnyGameEvent) => {
+        const floorEvent = event as FloorDescendedEvent;
+        const health = engine.getPlayerHealth();
+        const message = `Descended to floor ${floorEvent.newFloor}. Health restored to ${health.current}/${health.max}.`;
+        this.logOther(message);
+        vscode.window.showInformationMessage(message);
+      }
+    );
+    this.eventUnsubscribers.push(unsubFloorDescended);
   }
 
   /**
@@ -546,6 +560,38 @@ export class GameController {
    */
   moveRight(): void {
     this.handleMove(1, 0);
+  }
+
+  /**
+   * Descend to the next floor when the player is standing on downward stairs.
+   */
+  descendFloor(): void {
+    if (!this.gameSession) {
+      return;
+    }
+
+    const result = this.gameSession.descendFloor();
+    if (!result.success) {
+      const message =
+        result.reason === "not-on-stairs"
+          ? "Stand on the downward stairs (>) before descending."
+          : "This level has no downward stairs.";
+      vscode.window.showInformationMessage(message);
+      return;
+    }
+
+    this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+    this.equipmentTreeProvider.setEquipment(
+      this.gameSession.engine.getPlayerEquipment()
+    );
+    this.inventoryTreeProvider.setInventory(
+      this.gameSession.engine.getInventory(),
+      this.gameSession.engine.getInventoryCapacity()
+    );
+    this.documentProvider.refresh();
+    const playerPosition = this.gameSession.engine.getPlayerPosition();
+    this.updateCursorLocationAtPosition(playerPosition.x, playerPosition.y);
+    this.updateEnvironmentDecorations();
   }
 
   /**

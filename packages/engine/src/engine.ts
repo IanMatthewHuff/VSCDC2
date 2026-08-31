@@ -28,7 +28,7 @@ import {
   getXpForNextLevel,
   StatType,
 } from "./playerSlice";
-import { incrementTurn } from "./gameSlice";
+import { descendFloor, incrementTurn } from "./gameSlice";
 import {
   addEntity,
   damageEntity,
@@ -143,6 +143,26 @@ export class GameEngine {
    */
   public getTurnCount(): number {
     return this.store.getState().game.turnCount;
+  }
+
+  /**
+   * Get the current dungeon floor.
+   * @returns The one-based floor number
+   */
+  public getCurrentFloor(): number {
+    return this.store.getState().game.currentFloor;
+  }
+
+  /**
+   * Transition to the next floor.
+   *
+   * This consumes one turn, moves the player to the supplied start position,
+   * and clears entities, NPCs, and environments from the previous floor.
+   *
+   * @param playerStart Starting position on the next floor
+   */
+  public descendFloor(playerStart: Position): void {
+    this.store.dispatch(descendFloor({ playerStart }));
   }
 
   /**

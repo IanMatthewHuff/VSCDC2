@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GameDocumentProvider, GAME_DOCUMENT_URI } from "../gameDocumentProvider";
-import { createGame, GameSession } from "@vscdc/game";
+import { createDungeonCrawl, createGame, GameSession } from "@vscdc/game";
 
 // Mock vscode module - factory must not reference external variables
 vi.mock("vscode", () => {
@@ -68,6 +68,25 @@ describe("GameDocumentProvider", () => {
 
       // Should have floors (.)
       expect(content).toContain(".");
+    });
+
+    it("should render stairs and the current floor after descent", () => {
+      const gameSession = createDungeonCrawl({ seed: 42 });
+      provider.setGameSession(gameSession);
+      const stairs = gameSession.level.stairsDown;
+      expect(stairs).toBeDefined();
+
+      let content = provider.provideTextDocumentContent(GAME_DOCUMENT_URI);
+      expect(content).toContain("Dungeon Floor 1");
+      expect(content).toContain(">");
+      expect(content).toContain("> to descend");
+
+      gameSession.engine.movePlayerTo(stairs!.x, stairs!.y);
+      gameSession.descendFloor();
+
+      content = provider.provideTextDocumentContent(GAME_DOCUMENT_URI);
+      expect(content).toContain("Dungeon Floor 2");
+      expect(content).toContain(">");
     });
   });
 

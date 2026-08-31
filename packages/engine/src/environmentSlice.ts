@@ -4,6 +4,7 @@
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { EnvironmentState, Environment, Position } from "./types";
+import { descendFloor } from "./gameSlice";
 
 /**
  * Initial state for environments
@@ -65,6 +66,11 @@ const environmentSlice = createSlice({
     clearEnvironments: (state) => {
       state.environments = {};
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(descendFloor, (state) => {
+      state.environments = {};
+    });
   },
 });
 

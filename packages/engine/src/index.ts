@@ -50,6 +50,7 @@ export type {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  FloorDescendedEvent,
   AnyGameEvent,
 } from "./events";
 
@@ -82,7 +83,8 @@ export {
   DEFENSE_PER_POINT,
 } from "./playerSlice";
 export type { StatType } from "./playerSlice";
-export { incrementTurn, resetTurn } from "./gameSlice";
+export { incrementTurn, resetTurn, descendFloor } from "./gameSlice";
+export type { DescendFloorPayload } from "./gameSlice";
 export { addEntity, damageEntity, removeEntity, clearEntities, addNPC, removeNPC, clearNPCs } from "./entitySlice";
 export { addEnvironment, removeEnvironment, clearEnvironments } from "./environmentSlice";
 

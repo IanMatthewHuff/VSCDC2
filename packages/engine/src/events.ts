@@ -16,6 +16,7 @@ export enum GameEventType {
   EXPERIENCE_GAINED = "experience_gained",
   LEVEL_UP = "level_up",
   STAT_POINT_SPENT = "stat_point_spent",
+  FLOOR_DESCENDED = "floor_descended",
 }
 
 /**
@@ -161,6 +162,15 @@ export interface StatPointSpentEvent extends GameEvent {
 }
 
 /**
+ * Event emitted when the player transitions to the next dungeon floor.
+ */
+export interface FloorDescendedEvent extends GameEvent {
+  type: GameEventType.FLOOR_DESCENDED;
+  previousFloor: number;
+  newFloor: number;
+}
+
+/**
  * Union type of all possible game events
  */
 export type AnyGameEvent =
@@ -176,4 +186,5 @@ export type AnyGameEvent =
   | EquipmentUnequippedEvent
   | ExperienceGainedEvent
   | LevelUpEvent
-  | StatPointSpentEvent;
+  | StatPointSpentEvent
+  | FloorDescendedEvent;

@@ -87,7 +87,22 @@ The enemy AI system handles autonomous enemy behavior during combat:
 *TODO: Document item definition format*
 
 ### Dungeon Themes
-*TODO: Document dungeon generation parameters*
+**Status: BSP generation with multi-floor progression implemented**
+
+- Generated levels are 40x25 BSP dungeons with connected rooms and corridors.
+- The engine generator supplies deterministic entry and exit positions. The game
+  package converts the exit into a walkable `>` downward-stair tile.
+- A dungeon crawl captures one base seed. Floor 1 uses that seed and later floors
+  derive stable seeds from the base, making the full sequence reproducible.
+- The player must stand on the stairs and explicitly descend. The transition
+  preserves progression, inventory, consumables, and equipment while replacing
+  enemies, NPCs, and environments.
+- Successful descent fully restores health and consumes one turn. Enemies do not
+  act during the transition.
+- Floor `N` requests `N` level-1 goblins, capped at one goblin per safe available
+  non-start, non-stair room. Enemy stats do not scale.
+- Crawls are endless for now; upstairs, revisiting floors, and a final victory
+  state are not implemented.
 
 ### Combat Rules
 **Status: Implemented**
