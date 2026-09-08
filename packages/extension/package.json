@@ -51,6 +51,11 @@
         "category": "Dungeon Crawler"
       },
       {
+        "command": "vscdc.descendFloor",
+        "title": "Descend Stairs",
+        "category": "Dungeon Crawler"
+      },
+      {
         "command": "vscdc.useConsumable0",
         "title": "Use",
         "category": "Dungeon Crawler"
@@ -147,6 +152,11 @@
       {
         "command": "vscdc.moveRight",
         "key": "right",
+        "when": "vscdc.gameActive && editorTextFocus"
+      },
+      {
+        "command": "vscdc.descendFloor",
+        "key": "shift+.",
         "when": "vscdc.gameActive && editorTextFocus"
       }
     ],
