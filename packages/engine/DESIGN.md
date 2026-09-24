@@ -68,7 +68,7 @@ The engine uses custom middleware to emit game events:
 - Event bus for decoupled communication
 - Map/spatial system for 2D grid management (planned)
 - Action validation and execution
-- State serialization/deserialization (planned)
+- State serialization/deserialization
 
 ## API Surface
 
@@ -112,7 +112,12 @@ The engine exposes a clean API for the UI layer via the `GameEngine` class:
 Future additions:
 - `submitAction(action)` — Submit generic actions
 - `getVisibleMap()` — Query visible map state
-- `serialize() / deserialize()` — Save/load functionality
+
+**State Serialization**:
+- `getState()` — Returns the full Redux state as plain JSON; suitable for persistence
+- `loadState(state)` — Replaces the entire engine state with a previously
+  saved snapshot (dispatches an internal `engine/loadState` action that the
+  root reducer intercepts). Event handlers and subscribers are preserved.
 
 ## Design Principles
 
@@ -140,12 +145,12 @@ Future additions:
 - ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
 - ✓ Leveling system with XP, levels, and stat point allocation
 - ✓ Leveling event types (EXPERIENCE_GAINED, LEVEL_UP, STAT_POINT_SPENT)
+- ✓ State serialization/deserialization via `getState()` / `loadState()`
 - ✓ Comprehensive test suite for core functionality
 
 ### Planned
 - Map system and spatial queries
 - Action validation system
-- State serialization/deserialization
 - Advanced combat mechanics
 
 ## Key Systems
