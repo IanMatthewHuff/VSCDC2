@@ -84,6 +84,12 @@ export class PlayerTreeProvider implements vscode.TreeDataProvider<PlayerStatIte
           vscode.TreeItemCollapsibleState.None,
           new vscode.ThemeIcon("shield")
         ),
+        new PlayerStatItem(
+          "Gold",
+          `${this.playerStats.gold}`,
+          vscode.TreeItemCollapsibleState.None,
+          new vscode.ThemeIcon("symbol-numeric", new vscode.ThemeColor("charts.yellow"))
+        ),
       ];
 
       // Show stat points if available

@@ -85,26 +85,6 @@ Serialize full Redux state to `ExtensionContext.globalState` (or `workspaceState
 
 ---
 
-### Merchant NPC (buy items & consumables)
-A new NPC class that, instead of a pure dialog tree, opens a shop interface. Player can spend gold/currency to buy consumables (healing potions) and equipment. Reuses the existing NPC + dialog infrastructure with a Quick Pick "shop" mode.
-
-**Pros**
-- Builds on existing systems: NPCs, dialog trees, inventory, consumables, equipment
-- Gives player a reason to accumulate gold → unlocks a currency/economy loop
-- Fits the "content expansion" bucket — mostly game-package work with a small extension UI mode
-- Natural fit for procedurally generated floors (a safe merchant room per N floors)
-
-**Cons**
-- Requires introducing a currency/gold concept (new player stat, drop tables on enemies)
-- Shop UI in Quick Pick needs care — selling, buying, price display, "not enough gold" feedback
-- Implies item pickups already work (depends on the **Item Pickups** candidate) — or the merchant becomes the only source of items
-- Balance: pricing tiers and gold drops need tuning to feel meaningful
-
-**Dependencies**
-- Best shipped *after* **Item Pickups** so the inventory flow is already established
-
----
-
 ### New Enemy Type (e.g., Archer / Ranged)
 Pure content expansion: a second active enemy with different stats or a ranged attack (line-of-sight required, N-tile attack range).
 
@@ -122,6 +102,7 @@ Pure content expansion: a second active enemy with different stats or a ranged a
 
 ## Shipped
 
+- **Merchant NPC (MVP)** — New `Merchant` NPC (`M`) in the test level. Introduces a `gold` currency on the player and a Quick Pick "shop" UI; the MVP catalog sells Healing Potions for 5g. Sets the stage for a fuller economy loop (enemy gold drops, equipment sales, selling) later.
 - **BSP Dungeon Generator** ([PR #9](https://github.com/IanMatthewHuff/VSCDC2/pull/9)) — Seeded PRNG + BSP procedural level generation, `createDungeonCrawl()` session factory, `vscdc.startDungeonCrawl` command.
 - **Player Leveling** ([PR #8](https://github.com/IanMatthewHuff/VSCDC2/pull/8)) — XP from kills/floors, stat points allocation, level-up UI.
 

@@ -123,6 +123,8 @@ export interface Player {
   experience: number;
   /** Unspent stat points available to allocate */
   statPoints: number;
+  /** Currency (gold) held by the player */
+  gold: number;
 }
 
 /**

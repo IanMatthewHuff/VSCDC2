@@ -19,6 +19,13 @@ import {
 } from "@vscdc/engine";
 import { createTestLevel, createGeneratedLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
+import {
+  createMerchant,
+  getMerchantShopItem,
+  getMerchantShopItems,
+  MerchantShopItem,
+  resetMerchantIdCounter,
+} from "./merchant";
 import { getDialogHandler } from "./dialog";
 import { initializeEnvironmentEffects, createLavaEnvironment, getEnvironmentEffect } from "./environments";
 import { createGoblin, resetEnemyIdCounter, getEnemyXpReward } from "./enemies";
@@ -61,6 +68,13 @@ export { EquipmentSlotEnum, ItemTypeEnum } from "@vscdc/engine";
 
 // Re-export NPC and dialog types
 export { createSage, initializeNPCDialogs } from "./npcs";
+export {
+  createMerchant,
+  getMerchantShopItem,
+  getMerchantShopItems,
+  MERCHANT_NPC_TYPE,
+} from "./merchant";
+export type { MerchantShopItem } from "./merchant";
 export { getDialogHandler } from "./dialog";
 export type { DialogTree, DialogNode, DialogOption, DialogHandler } from "./dialog";
 
@@ -112,6 +126,8 @@ export interface PlayerStats {
   experienceToNextLevel: number;
   /** Unspent stat points available */
   statPoints: number;
+  /** Player's current gold (currency) */
+  gold: number;
 }
 
 /**
@@ -158,6 +174,24 @@ export interface GameSession {
   removeConsumable: (slot: number) => void;
   /** Called after equipment changes to advance world state (triggers enemy turns) */
   onEquipmentChanged: () => void;
+  /**
+   * Purchase an item from a merchant by catalog item ID.
+   * Deducts the item's price from player gold and adds the item to the
+   * player's inventory. Returns a result describing the outcome.
+   */
+  purchaseFromMerchant: (shopItemId: string) => PurchaseResult;
+}
+
+/**
+ * Result of attempting to purchase an item from a merchant.
+ */
+export interface PurchaseResult {
+  /** Whether the purchase succeeded */
+  success: boolean;
+  /** Reason the purchase failed (when success is false) */
+  reason?: "unknown_item" | "insufficient_gold" | "inventory_full";
+  /** The shop catalog entry that was purchased (when success is true) */
+  item?: MerchantShopItem;
 }
 
 // ============================================
@@ -294,6 +328,7 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
       experience: engine.getPlayerExperience(),
       experienceToNextLevel: engine.getXpForNextLevel(),
       statPoints: engine.getPlayerStatPoints(),
+      gold: engine.getPlayerGold(),
     };
   }
 
@@ -333,6 +368,35 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     processAllEnemyTurns(engine, level);
   }
 
+  function purchaseFromMerchant(shopItemId: string): PurchaseResult {
+    const shopItem = getMerchantShopItem(shopItemId);
+    if (!shopItem) {
+      return { success: false, reason: "unknown_item" };
+    }
+    if (engine.getPlayerGold() < shopItem.price) {
+      return { success: false, reason: "insufficient_gold" };
+    }
+    if (engine.isInventoryFull()) {
+      return { success: false, reason: "inventory_full" };
+    }
+
+    // Deduct gold first; if for any reason the deduction fails, bail.
+    const paid = engine.spendPlayerGold(shopItem.price);
+    if (!paid) {
+      return { success: false, reason: "insufficient_gold" };
+    }
+
+    const newItem = shopItem.create();
+    const added = engine.addToInventory(newItem);
+    if (!added) {
+      // Refund if inventory could not accept the item (race-condition safety).
+      engine.addPlayerGold(shopItem.price);
+      return { success: false, reason: "inventory_full" };
+    }
+
+    return { success: true, item: shopItem };
+  }
+
   return {
     engine,
     level,
@@ -347,6 +411,7 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     useConsumable,
     removeConsumable,
     onEquipmentChanged,
+    purchaseFromMerchant,
   };
 }
 
@@ -357,6 +422,7 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   // Reset entity ID counters for consistent IDs in tests
   entityIdCounter = 0;
   resetNPCIdCounter();
+  resetMerchantIdCounter();
   resetEnemyIdCounter();
   resetItemIdCounter();
 
@@ -388,6 +454,15 @@ export function createGame(options: CreateGameOptions = {}): GameSession {
   // This position avoids the target dummy at (2,2) and movement test paths
   const sage = createSage({ x: 1, y: 2 });
   engine.addNPC(sage);
+
+  // Add the Merchant NPC at position (5, 3)
+  // Adjacent to the player's start (3,3) → walk right twice to reach.
+  const merchant = createMerchant({ x: 5, y: 3 });
+  engine.addNPC(merchant);
+
+  // Give the player some starting gold so they can afford a healing potion
+  // from the Merchant in the MVP shop (potion costs 5 gold).
+  engine.addPlayerGold(10);
 
   // Add lava environment at position (4, 1)
   // This avoids the Sage (1,2), Target Dummy (2,2), and Player Start (3,3)
@@ -433,6 +508,7 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
   // Reset entity ID counters
   entityIdCounter = 0;
   resetNPCIdCounter();
+  resetMerchantIdCounter();
   resetEnemyIdCounter();
   resetItemIdCounter();
 
