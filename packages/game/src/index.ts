@@ -16,6 +16,7 @@ import {
   GameEventType,
   EntityDestroyedEvent,
   SeededRandom,
+  Rect,
 } from "@vscdc/engine";
 import { createTestLevel, createGeneratedLevel, isWalkable, Level } from "./level";
 import { initializeNPCDialogs, createSage, resetNPCIdCounter } from "./npcs";
@@ -131,6 +132,18 @@ export interface ActionResult {
 }
 
 /**
+ * Result of attempting to descend to the next dungeon floor.
+ */
+export interface DescendFloorResult {
+  /** Whether the floor transition occurred */
+  success: boolean;
+  /** Current floor after the attempt */
+  currentFloor: number;
+  /** Why descent failed */
+  reason?: "not-on-stairs" | "unavailable";
+}
+
+/**
  * Game session that combines the engine with a level
  */
 export interface GameSession {
@@ -158,6 +171,8 @@ export interface GameSession {
   removeConsumable: (slot: number) => void;
   /** Called after equipment changes to advance world state (triggers enemy turns) */
   onEquipmentChanged: () => void;
+  /** Descend when standing on downward stairs */
+  descendFloor: () => DescendFloorResult;
 }
 
 // ============================================
@@ -212,11 +227,22 @@ export interface CreateDungeonCrawlOptions {
   seed?: number;
 }
 
+interface FloorTransition {
+  createLevel: (floorNumber: number) => Level;
+  populateLevel: (level: Level, floorNumber: number) => void;
+}
+
 /**
  * Builds a GameSession from an engine and level.
  * Shared by both createGame() and createDungeonCrawl().
  */
-function buildGameSession(engine: GameEngine, level: Level): GameSession {
+function buildGameSession(
+  engine: GameEngine,
+  initialLevel: Level,
+  floorTransition?: FloorTransition
+): GameSession {
+  let currentLevel = initialLevel;
+
   function movePlayer(dx: number, dy: number): ActionResult {
     const pos = engine.getPlayerPosition();
     const newX = pos.x + dx;
@@ -243,7 +269,7 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
         engine.grantExperience(xpReward, `Defeated ${entityAtTarget.name}`);
       }
 
-      processAllEnemyTurns(engine, level);
+      processAllEnemyTurns(engine, currentLevel);
 
       return {
         success: attackResult.hit,
@@ -254,7 +280,7 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     }
 
     // No enemy or NPC, try to move
-    if (isWalkable(level, newX, newY)) {
+    if (isWalkable(currentLevel, newX, newY)) {
       engine.movePlayerBy(dx, dy);
 
       const environment = engine.getEnvironmentAt(targetPosition);
@@ -265,7 +291,7 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
         }
       }
 
-      processAllEnemyTurns(engine, level);
+      processAllEnemyTurns(engine, currentLevel);
 
       return {
         success: true,
@@ -330,12 +356,50 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
   }
 
   function onEquipmentChanged(): void {
-    processAllEnemyTurns(engine, level);
+    processAllEnemyTurns(engine, currentLevel);
+  }
+
+  function descendToNextFloor(): DescendFloorResult {
+    const stairsDown = currentLevel.stairsDown;
+    if (!floorTransition || !stairsDown) {
+      return {
+        success: false,
+        currentFloor: engine.getCurrentFloor(),
+        reason: "unavailable",
+      };
+    }
+
+    const playerPosition = engine.getPlayerPosition();
+    if (
+      playerPosition.x !== stairsDown.x ||
+      playerPosition.y !== stairsDown.y
+    ) {
+      return {
+        success: false,
+        currentFloor: engine.getCurrentFloor(),
+        reason: "not-on-stairs",
+      };
+    }
+
+    const nextFloorNumber = engine.getCurrentFloor() + 1;
+    const nextLevel = floorTransition.createLevel(nextFloorNumber);
+
+    currentLevel = nextLevel;
+    engine.healPlayerBy(engine.getPlayerHealth().max);
+    engine.descendFloor(nextLevel.playerStart);
+    floorTransition.populateLevel(nextLevel, nextFloorNumber);
+
+    return {
+      success: true,
+      currentFloor: nextFloorNumber,
+    };
   }
 
   return {
     engine,
-    level,
+    get level(): Level {
+      return currentLevel;
+    },
     movePlayer,
     getPlayerStats,
     getEntities,
@@ -347,7 +411,63 @@ function buildGameSession(engine: GameEngine, level: Level): GameSession {
     useConsumable,
     removeConsumable,
     onEquipmentChanged,
+    descendFloor: descendToNextFloor,
   };
+}
+
+const FLOOR_SEED_INCREMENT = 0x9e3779b9;
+const PLACEMENT_SEED_MASK = 0x51f15e5d;
+
+function deriveFloorSeed(baseSeed: number, floorNumber: number): number {
+  return (baseSeed + Math.imul(floorNumber - 1, FLOOR_SEED_INCREMENT)) | 0;
+}
+
+function positionsEqual(a: Position, b: Position): boolean {
+  return a.x === b.x && a.y === b.y;
+}
+
+function roomCenter(room: Rect): Position {
+  return {
+    x: Math.floor(room.x + room.width / 2),
+    y: Math.floor(room.y + room.height / 2),
+  };
+}
+
+function shufflePositions(positions: Position[], rng: SeededRandom): Position[] {
+  const shuffled = positions.map((position) => ({ ...position }));
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const swapIndex = rng.nextInt(0, index);
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ];
+  }
+  return shuffled;
+}
+
+function populateDungeonFloor(
+  engine: GameEngine,
+  level: Level,
+  floorNumber: number,
+  floorSeed: number
+): void {
+  const stairsDown = level.stairsDown;
+  const availablePositions = (level.rooms ?? [])
+    .map(roomCenter)
+    .filter((position) => !positionsEqual(position, level.playerStart))
+    .filter((position) => !stairsDown || !positionsEqual(position, stairsDown));
+  const placementRng = new SeededRandom(floorSeed ^ PLACEMENT_SEED_MASK);
+  const shuffledPositions = shufflePositions(availablePositions, placementRng);
+  const enemyCount = Math.min(floorNumber, shuffledPositions.length);
+
+  for (const position of shuffledPositions.slice(0, enemyCount)) {
+    engine.addEntity(createGoblin(position));
+  }
+
+  const lavaPosition = shuffledPositions[enemyCount];
+  if (lavaPosition) {
+    engine.addEnvironment(createLavaEnvironment(lavaPosition));
+  }
 }
 
 /**
@@ -442,43 +562,17 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
   // Initialize dialog handlers
   initializeNPCDialogs();
 
+  const baseSeed = options.seed ?? Date.now();
+  const createFloor = (floorNumber: number): Level => {
+    const floorSeed = deriveFloorSeed(baseSeed, floorNumber);
+    return createGeneratedLevel(floorSeed, floorNumber);
+  };
   const engine = new GameEngine({ enableDevTools: false });
-  const level = createGeneratedLevel(options.seed);
+  const level = createFloor(1);
 
-  // Set player to starting position (center of the first room)
+  // Set player to the generated dungeon entry.
   engine.movePlayerTo(level.playerStart.x, level.playerStart.y);
-
-  // Place a goblin in a random non-start room
-  const rooms = level.rooms ?? [];
-  if (rooms.length > 1) {
-    const rng = new SeededRandom(options.seed ?? Date.now());
-    // Advance RNG past the dungeon generation sequence
-    // Pick a room index from 1..rooms.length-1 (skip room 0 = player start)
-    const goblinRoomIdx = rng.nextInt(1, rooms.length - 1);
-    const goblinRoom = rooms[goblinRoomIdx];
-    const goblinPos = {
-      x: Math.floor(goblinRoom.x + goblinRoom.width / 2),
-      y: Math.floor(goblinRoom.y + goblinRoom.height / 2),
-    };
-    const goblin = createGoblin(goblinPos);
-    engine.addEntity(goblin);
-
-    // Place lava in another random room (not the start room or goblin room)
-    const availableRooms = rooms
-      .map((room, idx) => ({ room, idx }))
-      .filter(({ idx }) => idx !== 0 && idx !== goblinRoomIdx);
-
-    if (availableRooms.length > 0) {
-      const lavaChoice = availableRooms[rng.nextInt(0, availableRooms.length - 1)];
-      const lavaRoom = lavaChoice.room;
-      const lavaPos = {
-        x: Math.floor(lavaRoom.x + lavaRoom.width / 2),
-        y: Math.floor(lavaRoom.y + lavaRoom.height / 2),
-      };
-      const lava = createLavaEnvironment(lavaPos);
-      engine.addEnvironment(lava);
-    }
-  }
+  populateDungeonFloor(engine, level, 1, deriveFloorSeed(baseSeed, 1));
 
   // Give player the same starting equipment as createGame()
   const chainMail = createChainMailArmor();
@@ -498,5 +592,15 @@ export function createDungeonCrawl(options: CreateDungeonCrawlOptions = {}): Gam
   engine.addToInventory(inventoryPotion1);
   engine.addToInventory(inventoryPotion2);
 
-  return buildGameSession(engine, level);
+  return buildGameSession(engine, level, {
+    createLevel: createFloor,
+    populateLevel: (nextLevel, floorNumber) => {
+      populateDungeonFloor(
+        engine,
+        nextLevel,
+        floorNumber,
+        deriveFloorSeed(baseSeed, floorNumber)
+      );
+    },
+  });
 }
