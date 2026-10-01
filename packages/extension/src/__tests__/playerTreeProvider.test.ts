@@ -60,7 +60,7 @@ describe("PlayerTreeProvider", () => {
       expect(children).toEqual([]);
     });
 
-    it("returns name, level, health, attack, and defense items when player stats set", async () => {
+    it("returns name, level, health, attack, defense, and gold items when player stats set", async () => {
       provider.setPlayerStats({
         name: "Test Hero",
         health: { current: 8, max: 10 },
@@ -74,10 +74,11 @@ describe("PlayerTreeProvider", () => {
         experience: 50,
         experienceToNextLevel: 100,
         statPoints: 0,
+        gold: 7,
       });
 
       const children = await provider.getChildren();
-      expect(children).toHaveLength(5);
+      expect(children).toHaveLength(6);
 
       // Name stat
       expect(children[0].label).toBe("Name");
@@ -103,6 +104,10 @@ describe("PlayerTreeProvider", () => {
       // Defense stat
       expect(children[4].label).toBe("Defense");
       expect(children[4].description).toBe("1");
+
+      // Gold stat
+      expect(children[5].label).toBe("Gold");
+      expect(children[5].description).toBe("7");
     });
 
     it("shows stat points item when points are available", async () => {
@@ -119,14 +124,15 @@ describe("PlayerTreeProvider", () => {
         experience: 50,
         experienceToNextLevel: 200,
         statPoints: 3,
+        gold: 0,
       });
 
       const children = await provider.getChildren();
-      expect(children).toHaveLength(6); // 5 regular + 1 stat points
+      expect(children).toHaveLength(7); // 6 regular + 1 stat points
 
       // Stat points item should be last
-      expect(children[5].label).toBe("Stat Points");
-      expect(children[5].description).toBe("3 available - Click to spend");
+      expect(children[6].label).toBe("Stat Points");
+      expect(children[6].description).toBe("3 available - Click to spend");
     });
 
     it("returns empty array after clearing player stats", async () => {
@@ -143,6 +149,7 @@ describe("PlayerTreeProvider", () => {
         experience: 0,
         experienceToNextLevel: 100,
         statPoints: 0,
+        gold: 0,
       });
       provider.setPlayerStats(null);
 
@@ -173,6 +180,7 @@ describe("PlayerTreeProvider", () => {
         experience: 0,
         experienceToNextLevel: 100,
         statPoints: 0,
+        gold: 0,
       });
 
       // The event emitter's fire method should have been called
