@@ -13,6 +13,9 @@ import {
   getTileAt,
   getDialogHandler,
   getEnvironmentEffect,
+  getMerchantShopItems,
+  MERCHANT_NPC_TYPE,
+  MerchantShopItem,
   DialogTree,
   DialogNode,
   NPC,
@@ -575,6 +578,12 @@ export class GameController {
    * Handle interaction with an NPC by showing dialog
    */
   private async handleNPCInteraction(npc: NPC): Promise<void> {
+    // Merchants use a dedicated shop UI instead of the dialog tree.
+    if (npc.type === MERCHANT_NPC_TYPE) {
+      await this.handleMerchantInteraction(npc);
+      return;
+    }
+
     const dialogHandler = getDialogHandler(npc.type);
     if (!dialogHandler) {
       vscode.window.showInformationMessage(`No dialog available for this NPC.`);
@@ -598,6 +607,72 @@ export class GameController {
       this.logDialog(`Conversation with ${npc.name} was cancelled`);
     } else {
       this.logDialog(`Ended conversation with ${npc.name}. Path: ${resultPath.join(" → ")}`);
+    }
+  }
+
+  /**
+   * Handle interaction with a merchant by showing a shop QuickPick.
+   * The player can pick a single item to buy; selecting it deducts gold
+   * and adds the item to the inventory. ESC / cancel closes the shop.
+   */
+  private async handleMerchantInteraction(npc: NPC): Promise<void> {
+    if (!this.gameSession) {
+      return;
+    }
+
+    this.logDialog(`Opened shop with ${npc.name}`);
+
+    interface ShopQuickPickItem extends vscode.QuickPickItem {
+      shopItem?: MerchantShopItem;
+    }
+
+    // Loop so the player can buy multiple items in one visit until they
+    // explicitly leave (cancel/ESC).
+    while (true) {
+      const gold = this.gameSession.getPlayerStats().gold;
+      const catalog = getMerchantShopItems();
+
+      const items: ShopQuickPickItem[] = catalog.map((entry) => ({
+        label: `${entry.name} — ${entry.price}g`,
+        description: gold < entry.price ? "(not enough gold)" : undefined,
+        detail: entry.description,
+        shopItem: entry,
+      }));
+
+      const selected = await vscode.window.showQuickPick(items, {
+        title: `${npc.name}'s Shop — You have ${gold} gold`,
+        placeHolder: "Select an item to buy, or press Escape to leave",
+        ignoreFocusOut: true,
+      });
+
+      if (!selected || !selected.shopItem) {
+        this.logDialog(`Left ${npc.name}'s shop`);
+        return;
+      }
+
+      const result = this.gameSession.purchaseFromMerchant(selected.shopItem.id);
+      if (result.success && result.item) {
+        const message = `Bought ${result.item.name} for ${result.item.price} gold`;
+        this.logDialog(message);
+        vscode.window.showInformationMessage(message);
+        // Refresh UI to reflect new gold/inventory state.
+        this.playerTreeProvider.setPlayerStats(this.gameSession.getPlayerStats());
+        this.inventoryTreeProvider.setInventory(
+          this.gameSession.engine.getInventory(),
+          this.gameSession.engine.getInventoryCapacity()
+        );
+      } else {
+        let reason = "Purchase failed";
+        if (result.reason === "insufficient_gold") {
+          reason = "Not enough gold";
+        } else if (result.reason === "inventory_full") {
+          reason = "Inventory is full";
+        } else if (result.reason === "unknown_item") {
+          reason = "Item is no longer available";
+        }
+        this.logDialog(`${reason} (${selected.shopItem.name})`);
+        vscode.window.showWarningMessage(reason);
+      }
     }
   }
 
