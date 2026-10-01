@@ -205,6 +205,8 @@ export interface EnvironmentState {
  */
 export interface Game {
   turnCount: number;
+  /** Current dungeon floor in this run (starts at 1) */
+  currentFloor: number;
 }
 
 /**
