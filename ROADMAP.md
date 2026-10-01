@@ -83,6 +83,10 @@ Serialize full Redux state to `ExtensionContext.globalState` (or `workspaceState
 - Must re-register event handlers after load
 - Schema versioning matters from day one (even if just a `version` field)
 
+> **Status:** Shipped (see Shipped section). Initial implementation writes
+> to a workspace file (`.vscdc-save.json`) rather than `globalState`, so
+> users can move/back up saves as they wish.
+
 ---
 
 ### Merchant NPC (buy items & consumables)
@@ -122,6 +126,7 @@ Pure content expansion: a second active enemy with different stats or a ranged a
 
 ## Shipped
 
+- **Save / Load** — Single-slot save/load to `.vscdc-save.json` in the workspace root. Commands: `vscdc.saveGame`, `vscdc.loadGame`. Schema versioned (`version: 1`); captures full Redux state plus level layout.
 - **BSP Dungeon Generator** ([PR #9](https://github.com/IanMatthewHuff/VSCDC2/pull/9)) — Seeded PRNG + BSP procedural level generation, `createDungeonCrawl()` session factory, `vscdc.startDungeonCrawl` command.
 - **Player Leveling** ([PR #8](https://github.com/IanMatthewHuff/VSCDC2/pull/8)) — XP from kills/floors, stat points allocation, level-up UI.
 
