@@ -98,6 +98,13 @@ describe("generateDungeon", () => {
         expect(roomReachable).toBe(true);
       }
     });
+
+    it("places distinct reachable entry and exit positions on floor tiles", () => {
+      const dungeon = generate();
+      expect(dungeon.entryPosition).not.toEqual(dungeon.exitPosition);
+      expect(dungeon.tiles[dungeon.entryPosition.y][dungeon.entryPosition.x]).toBe("floor");
+      expect(dungeon.tiles[dungeon.exitPosition.y][dungeon.exitPosition.x]).toBe("floor");
+    });
   });
 
   describe("corridors", () => {
@@ -133,6 +140,8 @@ describe("generateDungeon", () => {
 
       expect(dungeon1.tiles).toEqual(dungeon2.tiles);
       expect(dungeon1.rooms).toEqual(dungeon2.rooms);
+      expect(dungeon1.entryPosition).toEqual(dungeon2.entryPosition);
+      expect(dungeon1.exitPosition).toEqual(dungeon2.exitPosition);
     });
 
     it("different seeds produce different dungeons", () => {
