@@ -4,6 +4,7 @@
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { EntityState, Enemy, NPC, Position } from "./types";
+import { descendFloor } from "./gameSlice";
 
 /**
  * Initial state for entities
@@ -132,6 +133,12 @@ const entitySlice = createSlice({
     clearNPCs: (state) => {
       state.npcs = {};
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(descendFloor, (state) => {
+      state.entities = {};
+      state.npcs = {};
+    });
   },
 });
 
