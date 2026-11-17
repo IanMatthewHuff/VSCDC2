@@ -9,6 +9,7 @@
  */
 
 import { SeededRandom } from "./random";
+import { Position } from "./types";
 
 export interface Rect {
   x: number;
@@ -32,6 +33,10 @@ export interface GeneratedDungeon {
   tiles: string[][];
   /** List of carved rooms (useful for entity placement) */
   rooms: Rect[];
+  /** Starting position in the first generated room */
+  entryPosition: Position;
+  /** Reachable position selected for the floor exit */
+  exitPosition: Position;
 }
 
 interface BSPNode {
@@ -188,11 +193,59 @@ function carveRooms(
 /**
  * Get the center of a room
  */
-function roomCenter(room: Rect): { x: number; y: number } {
+function roomCenter(room: Rect): Position {
   return {
     x: Math.floor(room.x + room.width / 2),
     y: Math.floor(room.y + room.height / 2),
   };
+}
+
+/**
+ * Select the room center farthest from the dungeon entry.
+ */
+function selectExitPosition(
+  rooms: Rect[],
+  grid: string[][],
+  entryPosition: Position
+): Position {
+  let exitPosition = entryPosition;
+  let greatestDistance = -1;
+
+  for (const room of rooms.slice(1)) {
+    const candidate = roomCenter(room);
+    const distance =
+      Math.abs(candidate.x - entryPosition.x) +
+      Math.abs(candidate.y - entryPosition.y);
+    if (distance > greatestDistance) {
+      greatestDistance = distance;
+      exitPosition = candidate;
+    }
+  }
+
+  if (
+    exitPosition.x !== entryPosition.x ||
+    exitPosition.y !== entryPosition.y
+  ) {
+    return exitPosition;
+  }
+
+  // A shallow BSP tree may produce one room. Use its farthest floor tile so
+  // the entry and exit remain distinct without introducing game-specific tiles.
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      if (grid[y][x] !== "floor") {
+        continue;
+      }
+      const distance =
+        Math.abs(x - entryPosition.x) + Math.abs(y - entryPosition.y);
+      if (distance > greatestDistance) {
+        greatestDistance = distance;
+        exitPosition = { x, y };
+      }
+    }
+  }
+
+  return exitPosition;
 }
 
 /**
@@ -287,10 +340,15 @@ export function generateDungeon(
   // 4. Connect sibling rooms with corridors
   connectRooms(root, grid);
 
+  const entryPosition = roomCenter(rooms[0]);
+  const exitPosition = selectExitPosition(rooms, grid, entryPosition);
+
   return {
     width,
     height,
     tiles: grid,
     rooms,
+    entryPosition,
+    exitPosition,
   };
 }

@@ -18,6 +18,7 @@ import {
   ExperienceGainedEvent,
   LevelUpEvent,
   StatPointSpentEvent,
+  FloorDescendedEvent,
   AnyGameEvent,
 } from "./events";
 import { selectEnvironmentAt } from "./environmentSlice";
@@ -125,6 +126,7 @@ export function createEventMiddleware(
     
     const result = next(action);
     const nextState = store.getState();
+    const floorChanged = prevState.game.currentFloor !== nextState.game.currentFloor;
 
     // Emit player moved event
     if (
@@ -164,6 +166,17 @@ export function createEventMiddleware(
         type: GameEventType.TURN_ADVANCED,
         timestamp: Date.now(),
         turnCount: nextState.game.turnCount,
+      };
+      emitEvent(eventHandlers, event);
+    }
+
+    // Emit floor descended event
+    if (floorChanged) {
+      const event: FloorDescendedEvent = {
+        type: GameEventType.FLOOR_DESCENDED,
+        timestamp: Date.now(),
+        previousFloor: prevState.game.currentFloor,
+        newFloor: nextState.game.currentFloor,
       };
       emitEvent(eventHandlers, event);
     }
@@ -263,7 +276,7 @@ export function createEventMiddleware(
 
     // Check for destroyed entities (entities that were removed)
     for (const [entityId, entity] of Object.entries(prevEntities)) {
-      if (!nextState.entities.entities[entityId]) {
+      if (!floorChanged && !nextState.entities.entities[entityId]) {
         // Entity was removed, check if it was destroyed (HP <= 0)
         // We emit this when entity is removed
         const destroyedEvent: EntityDestroyedEvent = {

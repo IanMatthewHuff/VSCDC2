@@ -32,7 +32,8 @@ The Redux store is organized into slices:
     health: { current: number, max: number }
   },
   game: {
-    turnCount: number
+    turnCount: number,
+    currentFloor: number
   },
   entities: {
     entities: Record<string, Enemy>,
@@ -84,6 +85,9 @@ The engine exposes a clean API for the UI layer via the `GameEngine` class:
 - `getPlayerName()` — Query player name
 - `getPlayerHealth()` — Query player health stats
 - `getTurnCount()` — Query current turn count
+- `getCurrentFloor()` — Query the one-based dungeon floor
+- `descendFloor(playerStart)` — Atomically advance the floor, consume a turn,
+  reposition the player, and clear floor-scoped state
 
 **Entity Management**:
 - `addEntity(entity)` — Add an enemy to the game
@@ -140,6 +144,9 @@ Future additions:
 - ✓ Environment event types (ENVIRONMENT_ENTERED, ENVIRONMENT_DAMAGE)
 - ✓ Leveling system with XP, levels, and stat point allocation
 - ✓ Leveling event types (EXPERIENCE_GAINED, LEVEL_UP, STAT_POINT_SPENT)
+- ✓ Floor lifecycle state and atomic descent transition
+- ✓ Floor transition event type (FLOOR_DESCENDED)
+- ✓ Deterministic dungeon entry and exit positions
 - ✓ Comprehensive test suite for core functionality
 
 ### Planned

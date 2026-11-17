@@ -236,7 +236,7 @@ We're using **Redux Toolkit** for state management in the engine.
 ```typescript
 {
   player: { id, position, displayChar, color },
-  game: { turnCount }
+  game: { turnCount, currentFloor }
 }
 ```
 
@@ -295,6 +295,18 @@ See `packages/engine/DESIGN.md` for implementation details.
 - Bundled with extension (simplest)
 - External content packs (future expansion)
 - Consider validation schema for content files
+
+### 5.8 Multi-Floor Dungeon Progression
+- Generated dungeons expose game-agnostic entry and exit positions.
+- The game package renders the exit as walkable downward stairs (`>`).
+- Descent is an explicit action while standing on the stairs and consumes one
+  turn without giving enemies an action during the transition.
+- Player progression, equipment, inventory, and consumables persist between
+  floors. Enemies, NPCs, and environments are floor-scoped and are replaced.
+- Reaching the stairs fully heals the player.
+- Floors form an endless deterministic sequence derived from one run seed.
+- Difficulty increases by adding one level-1 goblin per floor, capped by safe
+  available rooms; enemy stats do not scale with floor number.
 
 ---
 
