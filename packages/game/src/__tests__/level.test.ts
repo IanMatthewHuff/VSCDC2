@@ -137,16 +137,36 @@ describe("level", () => {
       for (let y = 0; y < level.height; y++) {
         for (let x = 0; x < level.width; x++) {
           const tile = level.tiles[y][x];
-          expect([TileType.Floor, TileType.Wall]).toContain(tile.type);
+          expect([TileType.Floor, TileType.Wall, TileType.StairsDown]).toContain(tile.type);
           expect(typeof tile.displayChar).toBe("string");
         }
       }
+    });
+
+    it("places walkable downward stairs away from the player start", () => {
+      const level = createGeneratedLevel(42);
+
+      expect(level.stairsDown).toBeDefined();
+      expect(level.stairsDown).not.toEqual(level.playerStart);
+      const stairs = getTileAt(level, level.stairsDown!.x, level.stairsDown!.y);
+      expect(stairs).toEqual({
+        type: TileType.StairsDown,
+        displayChar: ">",
+      });
+      expect(isWalkable(level, level.stairsDown!.x, level.stairsDown!.y)).toBe(true);
+    });
+
+    it("uses the supplied floor number in the level name", () => {
+      const level = createGeneratedLevel(42, 3);
+
+      expect(level.name).toBe("Dungeon Floor 3");
     });
 
     it("same seed produces same level", () => {
       const level1 = createGeneratedLevel(42);
       const level2 = createGeneratedLevel(42);
       expect(level1.playerStart).toEqual(level2.playerStart);
+      expect(level1.stairsDown).toEqual(level2.stairsDown);
       expect(level1.rooms).toEqual(level2.rooms);
     });
   });

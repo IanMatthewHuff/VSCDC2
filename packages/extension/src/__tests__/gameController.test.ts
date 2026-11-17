@@ -250,6 +250,34 @@ describe("GameController", () => {
     });
   });
 
+  describe("descendFloor", () => {
+    it("should not throw without an active game", () => {
+      expect(() => controller.descendFloor()).not.toThrow();
+    });
+
+    it("should explain when the active level has no stairs", async () => {
+      await controller.startGame();
+      vi.clearAllMocks();
+
+      controller.descendFloor();
+
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        "This level has no downward stairs."
+      );
+    });
+
+    it("should explain when the player is not standing on stairs", async () => {
+      await controller.startDungeonCrawl({ seed: 42 });
+      vi.clearAllMocks();
+
+      controller.descendFloor();
+
+      expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+        "Stand on the downward stairs (>) before descending."
+      );
+    });
+  });
+
   describe("dispose", () => {
     it("should stop the game on dispose", async () => {
       await controller.startGame();

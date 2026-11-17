@@ -40,6 +40,20 @@ The extension package is the UI layer—it binds the game engine to VS Code's na
 - Translate keypresses to engine actions
 - Support vim-style (`hjkl`) and arrow key movement
 
+## Multi-Floor Descent
+
+**Status: Implemented**
+
+- `vscdc.descendFloor` is bound to `Shift+.` (`>`) while the game editor is active.
+- The command delegates validation and transition behavior to `GameSession`.
+- Invalid use reports whether the current level has no stairs or the player must
+  first stand on `>`.
+- Successful descent is logged to the Other and combined Game logs, reports the
+  new floor and restored health, and refreshes the document, player view, cursor
+  location, inventory/equipment views, and environment decorations.
+- The game document level heading carries the current floor name without changing
+  the map's editor-line offset.
+
 ### Colorization
 - `DocumentSemanticTokensProvider` for entity colors
 - Token types: player, enemy, item, wall, floor, etc.

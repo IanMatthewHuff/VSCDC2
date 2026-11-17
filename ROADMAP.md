@@ -13,29 +13,18 @@ This document tracks **planned and candidate features** for the VS Code Roguelik
 
 ## In Progress
 
-_None currently._
+### Stairs & Multi-Floor Descent
+Add a `>` stair tile to generated dungeons and an explicit descend command. Each
+floor is generated deterministically from the run seed, fully heals the player,
+and increases difficulty by adding level-1 goblins without scaling their stats.
+
+_Tracking issue / PR: pending._
 
 ---
 
 ## Candidate Features
 
 Features below are scoped as **small, self-contained additions** that respect the three-package boundary (engine / game / extension). Each entry lists pros and cons to make the tradeoffs explicit.
-
-### Stairs & Multi-Floor Descent
-Add a `>` stair tile placed by the BSP generator; walking onto it regenerates the next floor with increasing difficulty. Track `currentFloor` in the game slice.
-
-**Pros**
-- Natural follow-up to the BSP generator — makes it feel like an actual roguelike "crawl"
-- Exercises the new generator for real (surfaces bugs in room placement / seeding)
-- Small surface: one new tile type, one engine action (`descendFloor`), one extension command
-- High perceived gameplay payoff
-
-**Cons**
-- Requires a difficulty-scaling decision (enemy count / level per floor)
-- Touches all three packages
-- Needs explicit handling for cross-floor state (enemies/items should not persist)
-
----
 
 ### Fog of War / Field of View
 Only render tiles the player has seen. Currently-visible tiles are bright, previously-seen tiles dim, unseen tiles hidden. Start with radius-based visibility; upgrade to shadowcasting later.
