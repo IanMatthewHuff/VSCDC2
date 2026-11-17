@@ -4,6 +4,7 @@
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Player, Position, EquipmentItem, ConsumableItem, EquipmentSlot, DEFAULT_INVENTORY_CAPACITY } from "./types";
+import { descendFloor } from "./gameSlice";
 
 // ============================================
 // Leveling Constants
@@ -218,6 +219,11 @@ export const playerSlice = createSlice({
       }
       state.statPoints -= 1;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(descendFloor, (state, action) => {
+      state.position = { ...action.payload.playerStart };
+    });
   },
 });
 

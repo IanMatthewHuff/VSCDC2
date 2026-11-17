@@ -10,6 +10,7 @@ import {
   generateDungeon,
   Rect,
   DungeonConfig,
+  Position,
 } from "@vscdc/engine";
 
 /**
@@ -18,6 +19,7 @@ import {
 export enum TileType {
   Floor = "floor",
   Wall = "wall",
+  StairsDown = "stairsDown",
 }
 
 /**
@@ -45,6 +47,8 @@ export interface Level {
   playerStart: { x: number; y: number };
   /** List of rooms in the level (for procedurally generated levels) */
   rooms?: Rect[];
+  /** Position of the downward stairs, when this level supports descent */
+  stairsDown?: Position;
 }
 
 /**
@@ -56,6 +60,8 @@ function createTile(type: TileType): Tile {
       return { type: TileType.Wall, displayChar: "#" };
     case TileType.Floor:
       return { type: TileType.Floor, displayChar: "." };
+    case TileType.StairsDown:
+      return { type: TileType.StairsDown, displayChar: ">" };
   }
 }
 
@@ -110,7 +116,10 @@ export function getTileAt(level: Level, x: number, y: number): Tile | undefined 
  */
 export function isWalkable(level: Level, x: number, y: number): boolean {
   const tile = getTileAt(level, x, y);
-  return tile !== undefined && tile.type === TileType.Floor;
+  return (
+    tile !== undefined &&
+    (tile.type === TileType.Floor || tile.type === TileType.StairsDown)
+  );
 }
 
 /** Default config for generated dungeons */
@@ -126,9 +135,10 @@ const DEFAULT_DUNGEON_CONFIG: DungeonConfig = {
  * Creates a procedurally generated level using BSP dungeon generation
  *
  * @param seed Optional seed for deterministic generation. If omitted, uses Date.now().
+ * @param floorNumber One-based floor number used for the level name
  * @returns A Level with rooms populated
  */
-export function createGeneratedLevel(seed?: number): Level {
+export function createGeneratedLevel(seed?: number, floorNumber: number = 1): Level {
   const rng = new SeededRandom(seed ?? Date.now());
   const dungeon = generateDungeon(DEFAULT_DUNGEON_CONFIG, rng);
 
@@ -137,19 +147,17 @@ export function createGeneratedLevel(seed?: number): Level {
     row.map((tileType) => createTile(tileType === "floor" ? TileType.Floor : TileType.Wall))
   );
 
-  // Player starts in the center of the first room
-  const firstRoom = dungeon.rooms[0];
-  const playerStart = {
-    x: Math.floor(firstRoom.x + firstRoom.width / 2),
-    y: Math.floor(firstRoom.y + firstRoom.height / 2),
-  };
+  const playerStart = { ...dungeon.entryPosition };
+  const stairsDown = { ...dungeon.exitPosition };
+  tiles[stairsDown.y][stairsDown.x] = createTile(TileType.StairsDown);
 
   return {
-    name: "Dungeon Floor 1",
+    name: `Dungeon Floor ${floorNumber}`,
     width: dungeon.width,
     height: dungeon.height,
     tiles,
     playerStart,
     rooms: dungeon.rooms,
+    stairsDown,
   };
 }
